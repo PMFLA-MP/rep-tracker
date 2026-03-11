@@ -8225,6 +8225,9 @@ function DataEntryView() {
     label: "Points",
     type: "number"
   }];
+  const {
+    allReps: ALL_DE2
+  } = React.useContext(AllRepsCtx);
   const parseCSVLine = line => {
     const result = [];
     let cur = "";
@@ -8413,7 +8416,7 @@ function DataEntryView() {
   };
 
   // ── CSV Parser (year-aware) ─────────────────────────────────────────────────
-  const parseCSV = text => {
+  const parseCSV = (text, allReps) => {
     const lines = text.trim().split(/\r?\n/);
     if (lines.length < 2) return {
       error: "File appears empty"
@@ -8472,10 +8475,7 @@ function DataEntryView() {
       if (!yr) yr = selYear; // fall back to currently selected year in form
 
       // Match rep name to roster
-      const {
-        allReps: ALL_DE
-      } = React.useContext(AllRepsCtx);
-      const matched = ALL_DE.find(r => r.name.toLowerCase() === repName.toLowerCase());
+      const matched = allReps.find(r => r.name.toLowerCase() === repName.toLowerCase());
       if (!matched) {
         errors.push(`Row ${i + 1}: rep "${repName}" not in roster (check spelling)`);
         continue;
@@ -8511,7 +8511,7 @@ function DataEntryView() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
-      const result = parseCSV(ev.target.result);
+      const result = parseCSV(ev.target.result, ALL_DE2);
       if (result.error) {
         setCsvMsg(result.error);
         return;
@@ -8542,9 +8542,6 @@ function DataEntryView() {
     setCsvMsg(`✓ Imported ${csvPreview.rows.length} entries — ${summary}`);
     setTimeout(() => setCsvMsg(""), 5000);
   };
-  const {
-    allReps: ALL_DE2
-  } = React.useContext(AllRepsCtx);
   const filteredReps = ALL_DE2.map(r => r.name).filter(n => n.toLowerCase().includes(search.toLowerCase()));
   const fmt$v = v => v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(0)}K` : v > 0 ? `$${Number(v).toLocaleString()}` : "—";
 
