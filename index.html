@@ -11756,7 +11756,6 @@ function AppInner() {
         const r = await storage.get(DATA_STORAGE_KEY);
         if (r) {
           setEntryData(JSON.parse(r.value));
-          setLbPeriod(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][new Date().getMonth()]);
         }
       } catch (e) {}
     })();
@@ -11870,6 +11869,12 @@ function AppInner() {
   const [statusFilt, setStatusFilt] = useState("all");
   const _curMo = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][new Date().getMonth()];
   const [lbPeriod, setLbPeriod] = useState(_curMo); // leaderboard period — shared so header counts match
+  // Re-apply current month once Gist data finishes loading so leaderboard isn't blank on refresh
+  useEffect(() => {
+    if (Object.keys(entryData).length > 0) {
+      setLbPeriod(_curMo);
+    }
+  }, [entryData]);
   const [meetingMode, setMeetingMode] = useState(false);
   const [focusRep, setFocusRep] = useState(null);
   // Stable alphabetical anon map: "Rep 01" … "Rep 35"
