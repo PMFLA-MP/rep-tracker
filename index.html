@@ -8225,8 +8225,25 @@ function DataEntryView() {
     label: "Points",
     type: "number"
   }];
-
-  // Header aliases for CSV import — case-insensitive
+  const parseCSVLine = line => {
+    const result = [];
+    let cur = "";
+    let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQ && line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else inQ = !inQ;
+      } else if (ch === ',' && !inQ) {
+        result.push(cur);
+        cur = "";
+      } else cur += ch;
+    }
+    result.push(cur);
+    return result;
+  };
   const HEADER_MAP = {
     "rep name": "rep",
     "rep": "rep",
@@ -8401,7 +8418,7 @@ function DataEntryView() {
     if (lines.length < 2) return {
       error: "File appears empty"
     };
-    const rawHeaders = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
+    const rawHeaders = parseCSVLine(lines[0]).map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
     const colMap = {};
     rawHeaders.forEach((h, i) => {
       const mapped = HEADER_MAP[h];
@@ -8420,7 +8437,7 @@ function DataEntryView() {
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
-      const cells = line.match(/("(?:[^"]|"")*"|[^,]*)/g) || [];
+      const cells = parseCSVLine(line);
       const clean = cells.map(c => c.trim().replace(/^"|"$/g, "").replace(/""/g, '"'));
       const repName = clean[colMap.rep]?.trim();
       let monthRaw = clean[colMap.month]?.trim();
