@@ -1079,7 +1079,7 @@ function LeaderboardView({
       status: r.status,
       daysNext: r.daysNext
     };
-    if (period === "2025") {
+    if (period === "2026") {
       const ms = r.mos.filter(m => MOS_2025.includes(m.month));
       const ptsTotal = r.decPts || 0;
       const mtgMs = ms.filter(m => m.meetingPct > 0);
@@ -1120,7 +1120,7 @@ function LeaderboardView({
   // avg monthly units AND avg monthly funded $ thresholds for the selected period.
   const calcPerfPos = r => {
     const pd = getPd(r);
-    const numMos = period === "all" ? r.mos.length : period === "2025" ? MOS_2025.filter(mo => r.mos.find(m => m.month === mo)).length : 1;
+    const numMos = period === "all" ? r.mos.length : period === "2026" ? MOS_2025.filter(mo => r.mos.find(m => m.month === mo)).length : 1;
     const avgUnits = numMos > 0 ? pd.units / numMos : 0;
     const avgFunded = numMos > 0 ? pd.funded / numMos : 0;
     const sorted = [...bm].sort((a, b) => b.tier - a.tier);
@@ -1187,7 +1187,7 @@ function LeaderboardView({
       key: "contact",
       label: "CONTACT %"
     }];
-    const isYr = period === "2025";
+    const isYr = period === "2026";
     return [{
       key: "expand",
       label: ""
@@ -2532,27 +2532,27 @@ function LeaderboardView({
         }, "\u2014");
     }
   };
-  const MOS25_OPTS = [{
-    id: "Oct",
-    label: "October"
+  const MOS26_OPTS = [{
+    id: "Jan",
+    label: "January"
   }, {
-    id: "Nov",
-    label: "November"
+    id: "Feb",
+    label: "February"
   }, {
-    id: "Dec",
-    label: "December"
+    id: "Mar",
+    label: "March"
   }];
   const FLAT_TABS = [{
-    id: "2025",
-    label: "2025 YTD",
-    c: "#a78bfa"
+    id: "2026",
+    label: "2026 YTD",
+    c: "#22d3ee"
   }, {
     id: "all",
     label: "ALL TIME",
-    c: "#22d3ee"
+    c: "#7ec8e3"
   }];
-  const periodLabel = period === "all" ? "ALL TIME" : period === "2025" ? "2025 YTD" : MOS25_OPTS.find(m => m.id === period)?.label || period;
-  const is25Mo = MOS25_OPTS.some(m => m.id === period);
+  const periodLabel = period === "all" ? "ALL TIME" : period === "2026" ? "2026 YTD" : MOS26_OPTS.find(m => m.id === period)?.label || period;
+  const is26Mo = MOS26_OPTS.some(m => m.id === period);
   const cols = getCols();
   const tabBtn = (active, color, onClick, children) => /*#__PURE__*/React.createElement("button", {
     onClick: onClick,
@@ -2586,10 +2586,10 @@ function LeaderboardView({
     style: {
       position: "relative"
     }
-  }, tabBtn(is25Mo, "#a78bfa", e => {
+  }, tabBtn(is26Mo, "#22d3ee", e => {
     e.stopPropagation();
     setOpen25(!open25);
-  }, /*#__PURE__*/React.createElement("span", null, "2025 ", is25Mo ? `· ${periodLabel}` : "", " ", open25 ? "▲" : "▼")), open25 && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, "2026 ", is26Mo ? `· ${periodLabel}` : "", " ", open25 ? "▲" : "▼")), open25 && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: "calc(100% + 4px)",
@@ -2601,7 +2601,7 @@ function LeaderboardView({
       minWidth: 140,
       boxShadow: "0 4px 16px rgba(0,0,0,.5)"
     }
-  }, MOS25_OPTS.map(m => /*#__PURE__*/React.createElement("div", {
+  }, MOS26_OPTS.map(m => /*#__PURE__*/React.createElement("div", {
     key: m.id,
     onClick: e => {
       e.stopPropagation();
@@ -2610,7 +2610,7 @@ function LeaderboardView({
     },
     style: {
       padding: "8px 14px",
-      color: period === m.id ? "#a78bfa" : "#a8c4d8",
+      color: period === m.id ? "#22d3ee" : "#a8c4d8",
       background: period === m.id ? "#0a1f35" : "transparent",
       cursor: "pointer",
       fontSize: 16,
@@ -4841,7 +4841,7 @@ function IdentityCards({
       borderRadius: 6,
       padding: "12px 14px"
     }
-  }, lbl("2025 YTD", "#a78bfa"), /*#__PURE__*/React.createElement("div", {
+  }, lbl("2026 YTD", "#a78bfa"), /*#__PURE__*/React.createElement("div", {
     style: {
       color: "#4a7fa8",
       fontSize: 15,
@@ -5688,7 +5688,7 @@ function RepDetail({
   const [printMode, setPrintMode] = useState(false);
   const [editGoal, setEditGoal] = useState(false);
   const [goalInput, setGoalInput] = useState("");
-  const [period, setPeriod] = useState("Dec");
+  const [period, setPeriod] = useState("Mar");
   const [open25, setOpen25] = useState(false);
   const {
     goals,
@@ -5706,19 +5706,19 @@ function RepDetail({
   const groupColor = gc?.color || "#22d3ee";
 
   // Period setup
-  const MOS25_OPTS = [{
-    id: "Oct",
-    label: "October"
+  const MOS26_OPTS = [{
+    id: "Jan",
+    label: "January"
   }, {
-    id: "Nov",
-    label: "November"
+    id: "Feb",
+    label: "February"
   }, {
-    id: "Dec",
-    label: "December"
+    id: "Mar",
+    label: "March"
   }];
-  const is25Mo = MOS25_OPTS.some(m => m.id === period);
-  const periodLabel = period === "all" ? "ALL TIME" : period === "2025" ? "2025 YTD (Oct–Dec)" : MOS25_OPTS.find(m => m.id === period)?.label || period;
-  const selMos = period === "all" ? rep.mos : period === "2025" ? rep.mos.filter(m => MOS_2025.includes(m.month)) : rep.mos.filter(m => m.month === period);
+  const is26Mo = MOS26_OPTS.some(m => m.id === period);
+  const periodLabel = period === "all" ? "ALL TIME" : period === "2026" ? "2026 YTD" : MOS26_OPTS.find(m => m.id === period)?.label || period;
+  const selMos = period === "all" ? rep.mos : period === "2026" ? rep.mos.filter(m => MOS_2025.includes(m.month)) : rep.mos.filter(m => m.month === period);
 
   // Period aggregates
   const selUnits = selMos.reduce((s, m) => s + (m.funded || 0), 0);
@@ -5962,10 +5962,10 @@ function RepDetail({
     style: {
       position: "relative"
     }
-  }, tabBtn(is25Mo, "#a78bfa", e => {
+  }, tabBtn(is26Mo, "#22d3ee", e => {
     e.stopPropagation();
     setOpen25(!open25);
-  }, `2025${is25Mo ? ` · ${periodLabel}` : " ▾"}`), open25 && /*#__PURE__*/React.createElement("div", {
+  }, `2026${is26Mo ? ` · ${periodLabel}` : " ▾"}`), open25 && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: "calc(100% + 4px)",
@@ -5977,7 +5977,7 @@ function RepDetail({
       minWidth: 140,
       boxShadow: "0 4px 16px rgba(0,0,0,.5)"
     }
-  }, MOS25_OPTS.map(m => /*#__PURE__*/React.createElement("div", {
+  }, MOS26_OPTS.map(m => /*#__PURE__*/React.createElement("div", {
     key: m.id,
     onClick: e => {
       e.stopPropagation();
@@ -5986,7 +5986,7 @@ function RepDetail({
     },
     style: {
       padding: "8px 14px",
-      color: period === m.id ? "#a78bfa" : "#a8c4d8",
+      color: period === m.id ? "#22d3ee" : "#a8c4d8",
       background: period === m.id ? "#0a1f35" : "transparent",
       cursor: "pointer",
       fontSize: 14,
@@ -5999,9 +5999,9 @@ function RepDetail({
       background: "#1a3550"
     }
   }), [{
-    id: "2025",
-    l: "2025 YTD",
-    c: "#a78bfa"
+    id: "2026",
+    l: "2026 YTD",
+    c: "#22d3ee"
   }, {
     id: "all",
     l: "ALL TIME",
@@ -6373,7 +6373,7 @@ function RepDetail({
     const {
       products
     } = React.useContext(ProductsCtx);
-    const moYear = mo => "2025";
+    const moYear = mo => "2026";
     const repProds = {};
     PRODUCT_TYPES.forEach(pt => {
       repProds[pt.key] = {
@@ -6688,7 +6688,7 @@ function TeamComparisonView({
     focusRep,
     maskName
   } = React.useContext(MeetingCtx);
-  const MOS_ALL = ["Oct", "Nov", "Dec", "Jan", "Feb"];
+  const MOS_ALL = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const [selMonth, setSelMonth] = useState("Dec");
   const [sortCol, setSortCol] = useState({
     col: "fundedAmt",
@@ -7278,19 +7278,19 @@ function RepCompareView() {
   } = React.useContext(MeetingCtx);
   const [selected, setSelected] = useState([]);
   const [searches, setSearches] = useState(["", "", ""]);
-  const [period, setPeriod] = useState("Dec");
+  const [period, setPeriod] = useState("Mar");
   const [open25, setOpen25] = useState(false);
 
   // MOS_2025 is global
-  const MOS25_OPTS = [{
-    id: "Oct",
-    label: "October"
+  const MOS26_OPTS = [{
+    id: "Jan",
+    label: "January"
   }, {
-    id: "Nov",
-    label: "November"
+    id: "Feb",
+    label: "February"
   }, {
-    id: "Dec",
-    label: "December"
+    id: "Mar",
+    label: "March"
   }];
   const fmt$v = v => v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(0)}K` : v > 0 ? `$${Math.round(v)}` : "—";
   const calcStatusForPeriod = (funded, numMos, expMonthly, isMax = false) => calcStatus(funded, numMos, expMonthly, isMax);
@@ -7298,7 +7298,7 @@ function RepCompareView() {
   // Compute period-filtered stats for a rep
   const getStats = r => {
     let mos;
-    if (period === "all") mos = r.mos;else if (period === "2025") mos = r.mos.filter(m => MOS_2025.includes(m.month));else mos = r.mos.filter(m => m.month === period);
+    if (period === "all") mos = r.mos;else if (period === "2026") mos = r.mos.filter(m => MOS_2025.includes(m.month));else mos = r.mos.filter(m => m.month === period);
     const sent = mos.reduce((s, m) => s + (m.sent || 0), 0);
     const received = mos.reduce((s, m) => s + (m.received || 0), 0);
     const approved = mos.reduce((s, m) => s + (m.approved || 0), 0);
@@ -7320,7 +7320,7 @@ function RepCompareView() {
       Jan: "janPts",
       Feb: "febPts"
     };
-    const pts = MOS25_OPTS.filter(m => mos.find(mo => mo.month === m.id)).reduce((s, m) => {
+    const pts = MOS26_OPTS.filter(m => mos.find(mo => mo.month === m.id)).reduce((s, m) => {
       const k = PTS_MAP[m.id];
       return k && r[k] != null ? s + (r[k] || 0) : s;
     }, 0) || null;
@@ -7343,7 +7343,7 @@ function RepCompareView() {
       status
     };
   };
-  const periodLabel = period === "all" ? "ALL TIME" : period === "2025" ? "2025 YTD" : MOS25_OPTS.find(m => m.id === period)?.label || period;
+  const periodLabel = period === "all" ? "ALL TIME" : period === "2026" ? "2026 YTD" : MOS26_OPTS.find(m => m.id === period)?.label || period;
   const addRep = name => {
     if (selected.includes(name) || selected.length >= 3) return;
     setSelected(p => [...p, name]);
@@ -7671,10 +7671,10 @@ function RepCompareView() {
     style: {
       position: "relative"
     }
-  }, tabBtn(MOS_2025.includes(period) || period === "2025", "#a78bfa", e => {
+  }, tabBtn(MOS26_OPTS.some(m => m.id === period) || period === "2026", "#a78bfa", e => {
     e.stopPropagation();
     setOpen25(p => !p);
-  }, `2025${MOS_2025.includes(period) ? ` · ${period}` : " ▾"}`), open25 && /*#__PURE__*/React.createElement("div", {
+  }, `2026${MOS26_OPTS.some(m => m.id === period) ? ` · ${period}` : " ▾"}`), open25 && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: "calc(100% + 4px)",
@@ -7688,10 +7688,10 @@ function RepCompareView() {
       padding: "4px 0"
     },
     onClick: e => e.stopPropagation()
-  }, tabBtn(period === "2025", "#a78bfa", () => {
-    setPeriod("2025");
+  }, tabBtn(period === "2026", "#a78bfa", () => {
+    setPeriod("2026");
     setOpen25(false);
-  }, "2025 YTD"), MOS25_OPTS.map(m => /*#__PURE__*/React.createElement("div", {
+  }, "2026 YTD"), MOS26_OPTS.map(m => /*#__PURE__*/React.createElement("div", {
     key: m.id
   }, tabBtn(period === m.id, "#a78bfa", () => {
     setPeriod(m.id);
@@ -10341,7 +10341,7 @@ function DeptHeadView() {
     meetingMode,
     maskName
   } = React.useContext(MeetingCtx);
-  const MOS_ORDER = ["Oct", "Nov", "Dec", "Jan", "Feb"];
+  const MOS_ORDER = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const YEAR_OPTS = ["2026", "2027", "2028"];
   const YEAR_COLORS = {
     "2024": "#a78bfa",
@@ -10351,7 +10351,7 @@ function DeptHeadView() {
   };
   const fmt$ = v => v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(0)}K` : v > 0 ? `$${Math.round(v)}` : "—";
   const makeKey = (name, year, month) => `${name}::${year}::${month}`;
-  const moYear = mo => "2025";
+  const moYear = mo => "2026";
   const {
     allReps: ALL_DH
   } = React.useContext(AllRepsCtx);
@@ -10359,7 +10359,7 @@ function DeptHeadView() {
   const daveRep = ALL_DH.find(r => r.name === "Dave Salas");
 
   // ── Max SBA Panel ──────────────────────────────────────────────────────────
-  const [maxY, setMaxY] = useState("2025");
+  const [maxY, setMaxY] = useState("2026");
   const [maxM, setMaxM] = useState("Dec");
   const [maxForm, setMaxForm] = useState({
     pipeline: "",
@@ -11063,16 +11063,6 @@ function ProductMixView() {
   } = React.useContext(RosterCtx);
   const _mn = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const CURRENT_MONTH = _mn[new Date().getMonth()];
-  const MOS25_OPTS = [{
-    id: "Oct",
-    label: "October"
-  }, {
-    id: "Nov",
-    label: "November"
-  }, {
-    id: "Dec",
-    label: "December"
-  }];
   const MOS26_OPTS = [{
     id: "Jan",
     label: "January"
@@ -11100,26 +11090,33 @@ function ProductMixView() {
   }, {
     id: "Sep",
     label: "September"
+  }, {
+    id: "Oct",
+    label: "October"
+  }, {
+    id: "Nov",
+    label: "November"
+  }, {
+    id: "Dec",
+    label: "December"
   }];
-  const ALL_MOS_25 = ["Oct", "Nov", "Dec"];
-  const ALL_MOS_26 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"];
-  const MOS_ALL = [...ALL_MOS_25];
-  const moYear = mo => "2025";
-  const [period, setPeriod] = useState("Dec");
+  const ALL_MOS_26 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const MOS_ALL = [...ALL_MOS_26];
+  const moYear = mo => "2026";
+  const [period, setPeriod] = useState("Mar");
   const [open25, setOpen25] = useState(false);
   const makeKey = (name, yr, mo) => `${name}::${yr}::${mo}`;
   const {
     allReps: ALL_PM
   } = React.useContext(AllRepsCtx);
   const ACTIVE_REPS = ALL_PM.filter(r => r.active !== false && !DEPT_HEAD_NAMES.includes(r.name));
-  const is25Mo = MOS25_OPTS.some(m => m.id === period);
   const is26Mo = MOS26_OPTS.some(m => m.id === period);
-  const periodLabel = period === "all" ? "ALL TIME" : period === "2025" ? "2025 YTD" : MOS25_OPTS.find(m => m.id === period)?.label || period;
+  const periodLabel = period === "all" ? "ALL TIME" : period === "2026" ? "2026 YTD" : MOS26_OPTS.find(m => m.id === period)?.label || period;
 
   // Determine which months to include based on period
   const activeMos = useMemo(() => {
     if (period === "all") return MOS_ALL;
-    if (period === "2025") return ALL_MOS_25;
+    if (period === "2026") return ALL_MOS_25;
     return [period];
   }, [period]);
   const tabBtn = (active, color, onClick, children) => /*#__PURE__*/React.createElement("button", {
@@ -11253,10 +11250,10 @@ function ProductMixView() {
     style: {
       position: "relative"
     }
-  }, tabBtn(is25Mo, "#a78bfa", e => {
+  }, tabBtn(is26Mo, "#22d3ee", e => {
     e.stopPropagation();
     setOpen25(!open25);
-  }, /*#__PURE__*/React.createElement("span", null, "2025 ", is25Mo ? `· ${periodLabel}` : "", " ", open25 ? "▲" : "▼")), open25 && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, "2026 ", is26Mo ? `· ${periodLabel}` : "", " ", open25 ? "▲" : "▼")), open25 && /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: "calc(100% + 4px)",
@@ -11268,7 +11265,7 @@ function ProductMixView() {
       minWidth: 140,
       boxShadow: "0 4px 16px rgba(0,0,0,.5)"
     }
-  }, MOS25_OPTS.map(m => /*#__PURE__*/React.createElement("div", {
+  }, MOS26_OPTS.map(m => /*#__PURE__*/React.createElement("div", {
     key: m.id,
     onClick: e => {
       e.stopPropagation();
@@ -11277,7 +11274,7 @@ function ProductMixView() {
     },
     style: {
       padding: "8px 14px",
-      color: period === m.id ? "#a78bfa" : "#a8c4d8",
+      color: period === m.id ? "#22d3ee" : "#a8c4d8",
       background: period === m.id ? "#0a1f35" : "transparent",
       cursor: "pointer",
       fontSize: 15,
@@ -11293,7 +11290,7 @@ function ProductMixView() {
     }
   }), [{
     id: "2025",
-    label: "2025 YTD",
+    label: "2026 YTD",
     c: "#a78bfa"
   }, {
     id: "all",
@@ -11999,12 +11996,7 @@ function AppInner() {
   }, new Date().toLocaleString("default", {
     month: "short",
     year: "numeric"
-  }).toUpperCase(), " \xB7 ", ACTIVE.length, " ACTIVE REPS", formerCount > 0 && /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#f87171",
-      marginLeft: 8
-    }
-  }, "\xB7 ", formerCount, " FORMER"))), /*#__PURE__*/React.createElement("div", {
+  }).toUpperCase(), " \xB7 ", ACTIVE.length, " ACTIVE REPS")), /*#__PURE__*/React.createElement("div", {
     style: {
       display: "flex",
       gap: 10,
