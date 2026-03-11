@@ -2617,7 +2617,13 @@ function LeaderboardView({
       letterSpacing: .8,
       fontFamily: "'DM Mono',monospace"
     }
-  }, m.label)))), /*#__PURE__*/React.createElement("div", {
+  }, m.label)))), (() => {
+    const cm = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][new Date().getMonth()];
+    return tabBtn(period === cm, "#34d399", () => {
+      setPeriod(cm);
+      setOpen25(false);
+    }, "CURRENT MONTH");
+  })(), /*#__PURE__*/React.createElement("div", {
     style: {
       width: 1,
       height: 20,
@@ -11859,7 +11865,8 @@ function AppInner() {
   const [sel, setSel] = useState(null);
   const [view, setView] = useState("board");
   const [statusFilt, setStatusFilt] = useState("all");
-  const [lbPeriod, setLbPeriod] = useState("Dec"); // leaderboard period — shared so header counts match
+  const _curMo = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][new Date().getMonth()];
+  const [lbPeriod, setLbPeriod] = useState(_curMo); // leaderboard period — shared so header counts match
   const [meetingMode, setMeetingMode] = useState(false);
   const [focusRep, setFocusRep] = useState(null);
   // Stable alphabetical anon map: "Rep 01" … "Rep 35"
