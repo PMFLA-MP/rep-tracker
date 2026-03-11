@@ -11754,7 +11754,10 @@ function AppInner() {
     (async () => {
       try {
         const r = await storage.get(DATA_STORAGE_KEY);
-        if (r) setEntryData(JSON.parse(r.value));
+        if (r) {
+          setEntryData(JSON.parse(r.value));
+          setLbPeriod(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][new Date().getMonth()]);
+        }
       } catch (e) {}
     })();
   }, []);
