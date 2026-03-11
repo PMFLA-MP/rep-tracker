@@ -180,7 +180,7 @@ const ProductsCtx = React.createContext({
   saveProducts: () => {}
 });
 const ALL_MONTHS_12 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const YEAR_OPTS = ["2024", "2025", "2026", "2027"];
+const YEAR_OPTS = ["2026", "2027", "2028"];
 const MOS_2025 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; // v4: all months treated as valid
 const MOS_2026 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const STATUS_CFG = {
@@ -8188,7 +8188,7 @@ function DataEntryView() {
 
   // ── Year / Month config ─────────────────────────────────────────────────────
   const ALL_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const YEAR_OPTS = ["2024", "2025", "2026", "2027"]; // extend as needed
+  const YEAR_OPTS = ["2026", "2027", "2028"]; // extend as needed
   // Year colors for visual differentiation
   const YEAR_COLORS = {
     "2024": "#a78bfa",
@@ -8275,7 +8275,7 @@ function DataEntryView() {
   // Storage key format: "rep::YYYY::Mon" — year-aware, no collisions
   const makeKey = (rep, year, month) => `${rep}::${year}::${month}`;
   const [selRep, setSelRep] = useState("");
-  const [selYear, setSelYear] = useState("2025");
+  const [selYear, setSelYear] = useState("2026");
   const [selMonth, setSelMonth] = useState("Mar");
   const [form, setForm] = useState({});
   const [saved, setSaved] = useState(false);
@@ -8353,7 +8353,7 @@ function DataEntryView() {
     setEditKey(key);
     setSelRep(entry.rep);
     setSearch(entry.rep);
-    setSelYear(entry.year || "2025");
+    setSelYear(entry.year || "2026");
     setSelMonth(entry.month);
     setForm(Object.fromEntries(FIELDS.map(f => [f.key, entry[f.key] ?? entry[f.key] === 0 ? 0 : ""])));
   };
@@ -9781,7 +9781,7 @@ function RosterView() {
     saveReps
   } = React.useContext(AllRepsCtx);
   const ALL_MONTHS_12 = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const YEAR_OPTS = ["2024", "2025", "2026", "2027"];
+  const YEAR_OPTS = ["2026", "2027", "2028"];
   const GRP_OPTS = ["Team Leader", "OCTA", "Up & Comer", "RIT", "Dept Head"];
   const TIER_OPTS = [0, 1, 2, 5, 6, 7];
   const [search, setSearch] = useState("");
@@ -10045,75 +10045,47 @@ function RosterView() {
     }, "Start: ", rep.start, " \xB7 Tier ", rep.tier, " \xB7 ", fmt$v(rep.expMonthly), "/mo target")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
-        gap: 6
+        gap: 6,
+        alignItems: "center",
+        flexShrink: 0
       }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => startEdit(rep, idx),
-      style: {
-        background: "#0a1f35",
-        border: "1px solid #1e3a5f",
-        borderRadius: 4,
-        padding: "4px 12px",
-        color: "#7ec8e3",
-        fontSize: 12,
-        cursor: "pointer"
-      }
-    }, "Edit"), /*#__PURE__*/React.createElement("button", {
+    }, rep.active !== false ? /*#__PURE__*/React.createElement("button", {
       onClick: () => quickToggle(rep, idx),
       style: {
-        background: rep.active !== false ? "#2d1b00" : "#052e16",
-        border: `1px solid ${rep.active !== false ? "#9a3412" : "#166534"}`,
+        background: "#1a0505",
+        border: "1px solid #7f1d1d",
         borderRadius: 4,
         padding: "4px 10px",
-        color: rep.active !== false ? "#fb923c" : "#4ade80",
-        fontSize: 12,
-        cursor: "pointer"
-      }
-    }, rep.active !== false ? "Deactivate" : "Reactivate"), confirmDel === idx ? /*#__PURE__*/React.createElement("span", {
-      style: {
-        display: "flex",
-        gap: 4,
-        alignItems: "center"
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
         color: "#f87171",
-        fontSize: 12
+        fontSize: 13,
+        cursor: "pointer",
+        letterSpacing: .5
       }
-    }, "Delete?"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => deleteRep(idx),
+    }, "MARK INACTIVE") : /*#__PURE__*/React.createElement("button", {
+      onClick: () => quickToggle(rep, idx),
       style: {
-        background: "#3b0a0a",
-        border: "1px solid #991b1b",
+        background: "#052e16",
+        border: "1px solid #166534",
         borderRadius: 4,
-        padding: "3px 10px",
-        color: "#f87171",
-        fontSize: 12,
-        cursor: "pointer"
+        padding: "4px 10px",
+        color: "#4ade80",
+        fontSize: 13,
+        cursor: "pointer",
+        letterSpacing: .5
       }
-    }, "Yes"), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setConfirmDel(null),
+    }, "REACTIVATE"), /*#__PURE__*/React.createElement("button", {
+      onClick: () => startEdit(rep, idx),
       style: {
         background: "none",
         border: "1px solid #1a3550",
         borderRadius: 4,
-        padding: "3px 10px",
-        color: "#4a7fa8",
-        fontSize: 12,
-        cursor: "pointer"
-      }
-    }, "No")) : /*#__PURE__*/React.createElement("button", {
-      onClick: () => setConfirmDel(idx),
-      style: {
-        background: "none",
-        border: "1px solid #3b0a0a",
-        borderRadius: 4,
         padding: "4px 10px",
-        color: "#f87171",
-        fontSize: 12,
-        cursor: "pointer"
+        color: "#7ec8e3",
+        fontSize: 13,
+        cursor: "pointer",
+        letterSpacing: .5
       }
-    }, "\u2715"))));
+    }, "EDIT"))));
   };
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -10353,7 +10325,7 @@ function DeptHeadView() {
     maskName
   } = React.useContext(MeetingCtx);
   const MOS_ORDER = ["Oct", "Nov", "Dec", "Jan", "Feb"];
-  const YEAR_OPTS = ["2024", "2025", "2026", "2027"];
+  const YEAR_OPTS = ["2026", "2027", "2028"];
   const YEAR_COLORS = {
     "2024": "#a78bfa",
     "2025": "#818cf8",
