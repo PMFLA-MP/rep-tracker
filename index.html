@@ -248,7 +248,7 @@ const DATA_STORAGE_KEY = "leaderboard-data-v1";
 const ROSTER_STORAGE_KEY = "leaderboard-roster-v1";
 
 // ── GitHub Gist Backend ───────────────────────────────────────────────────────
-const GIST_ID = "05de8ff752660ec276188a46f1f09e17"; // ← Create a new Gist and paste the ID here
+const GIST_ID = "REPLACE_WITH_YOUR_GIST_ID"; // ← Create a new Gist and paste the ID here
 const TOKEN_KEY = "rep-tracker-v4-gh-token"; // separate from historical version
 
 // Token is stored in localStorage — never hardcoded
@@ -10001,7 +10001,7 @@ function RosterView() {
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         width: 4,
-        height: 36,
+        height: 48,
         background: gc2,
         borderRadius: 2,
         flexShrink: 0
@@ -10013,18 +10013,36 @@ function RosterView() {
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        flexWrap: "wrap"
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
         color: gc2,
         fontFamily: "'Bebas Neue',sans-serif",
-        fontSize: 20,
+        fontSize: 32,
         letterSpacing: 1,
-        lineHeight: 1.2
+        lineHeight: 1
       }
-    }, rep.name), /*#__PURE__*/React.createElement("div", {
+    }, rep.name), /*#__PURE__*/React.createElement("span", {
+      style: {
+        background: `${gc2}22`,
+        color: gc2,
+        fontSize: 12,
+        fontWeight: 700,
+        padding: "2px 8px",
+        borderRadius: 10,
+        letterSpacing: .5
+      }
+    }, rep.group)), /*#__PURE__*/React.createElement("div", {
       style: {
         color: "#4a7fa8",
-        fontSize: 13
+        fontSize: 13,
+        marginTop: 1
       }
-    }, rep.group, " \xB7 Start: ", rep.start, " \xB7 Tier ", rep.tier, " \xB7 ", fmt$v(rep.expMonthly), "/mo target")), /*#__PURE__*/React.createElement("div", {
+    }, "Start: ", rep.start, " \xB7 Tier ", rep.tier, " \xB7 ", fmt$v(rep.expMonthly), "/mo target")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: "flex",
         gap: 6
