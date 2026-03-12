@@ -8330,10 +8330,11 @@ function DataEntryView() {
   // ─── SF Export sheet-type detection ──────────────────────────────────────────
   const detectSheetType = (headers) => {
     const h = headers.map(x => x.toLowerCase().trim());
+    // Check most-specific first using the PRIMARY date column for each export type
+    if (h.includes("app sent date"))    return "app_sent";
+    if (h.includes("app received date") && !h.includes("app sent date")) return "app_received";
+    if (h.includes("approved date") && !h.includes("app sent date") && !h.includes("app received date")) return "approved";
     if (h.includes("funded date") && h.includes("combined reps")) return "funded";
-    if (h.includes("app sent date") && !h.includes("funded date"))  return "app_sent";
-    if (h.includes("app received date") && !h.includes("funded date")) return "app_received";
-    if (h.includes("approved date") && !h.includes("funded date"))  return "approved";
     if (h.includes("activity rep"))   return "calls_220";
     if (h.includes("lead owner alias")) return "calls_rit_leads";
     if (h.includes("iso sales rep") && h.includes("assigned alias")) return "calls_rit_opps";
