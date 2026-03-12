@@ -366,6 +366,13 @@ const storage = (() => {
 // ─────────────────────────────────────────────────────────────────────────────
 // Pre-seed former reps so they start inactive on first load
 // Any rep not listed here is treated as active by default
+// Maps alternate spellings/aliases → canonical roster name
+const NAME_ALIASES = {
+  "mathew liebman": "Mathew Liebmann",
+  "matthew liebmann": "Mathew Liebmann",
+  "matthew liebman": "Mathew Liebmann",
+};
+
 const ROSTER_DEFAULTS = {
   "Sebastian Devia": {
     active: false,
@@ -8553,7 +8560,11 @@ function DataEntryView() {
     const acc = {};
     const errors = [];
 
-    const matchRep = (name) => allReps.find(r => r.name.toLowerCase() === name.toLowerCase());
+    const matchRep = (name) => {
+      const lower = name.toLowerCase();
+      const canonical = NAME_ALIASES[lower] || name;
+      return allReps.find(r => r.name.toLowerCase() === canonical.toLowerCase());
+    };
 
     const ensureAcc = (repName, year, month) => {
       const matched = matchRep(repName);
@@ -8697,7 +8708,7 @@ function DataEntryView() {
       setCsvPreview(result);
       setCsvMsg("");
     };
-    reader.readAsText(file);
+    reader.readAsText(file, "windows-1252");
     e.target.value = "";
   };
   const commitCSV = async () => {
