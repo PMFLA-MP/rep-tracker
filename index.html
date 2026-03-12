@@ -4749,13 +4749,17 @@ function IdentityCards({
   rep,
   groupColor
 }) {
-  // MOS_2025 is global
-  // MOS_2025 is global
-  const mos25 = rep.mos.filter(m => MOS_2025.includes(m.month));
-  const ytd25Amt = mos25.reduce((s, m) => s + (m.fundedAmt || 0), 0);
-  const ytd25Units = mos25.reduce((s, m) => s + (m.funded || 0), 0);
-  const decAmt = rep.mos.find(m => m.month === "Dec")?.fundedAmt || 0;
-  const decUnits = rep.mos.find(m => m.month === "Dec")?.funded || 0;
+  const curMoIdx = new Date().getMonth();
+  const curMoName = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][curMoIdx];
+  const curMoLabel = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][curMoIdx];
+  const mos26 = rep.mos.filter(m => m.year === "2026");
+  const ytd26Amt = mos26.reduce((s, m) => s + (m.fundedAmt || 0), 0);
+  const ytd26Units = mos26.reduce((s, m) => s + (m.funded || 0), 0);
+  const curMo = rep.mos.find(m => m.month === curMoName && m.year === "2026") || {};
+  const curAmt = curMo.fundedAmt || 0;
+  const curUnits = curMo.funded || 0;
+  const curSent = curMo.sent || 0;
+  const curApproved = curMo.approved || 0;
   const tierC = t => t >= 6 ? "#34d399" : t >= 3 ? "#fbbf24" : "#f87171";
   const calcTierGc = POS_GROUPS.find(p => p.key === rep.expPos);
   const calcTierC = calcTierGc?.color || "#a78bfa";
@@ -4786,6 +4790,7 @@ function IdentityCards({
       lineHeight: 1
     }
   }, txt);
+  const moRange = mos26.length > 0 ? mos26.map(m => m.month).join(" · ") : "No data";
   return /*#__PURE__*/React.createElement("div", {
     style: {
       display: "grid",
@@ -4850,23 +4855,70 @@ function IdentityCards({
   }, lbl("2026 YTD", "#a78bfa"), /*#__PURE__*/React.createElement("div", {
     style: {
       color: "#4a7fa8",
-      fontSize: 15,
+      fontSize: 14,
       marginBottom: 8
     }
-  }, "Oct \xB7 Nov \xB7 Dec"), lbl("Funded $"), bigV(fmt$(ytd25Amt), ytd25Amt > 500000 ? "#34d399" : ytd25Amt > 0 ? "#22d3ee" : "#4a7fa8"), divider, lbl("Units"), bigV(ytd25Units, ytd25Units > 15 ? "#34d399" : ytd25Units > 5 ? "#22d3ee" : "#4a7fa8")), /*#__PURE__*/React.createElement("div", {
+  }, moRange), lbl("Funded $"), bigV(fmt$(ytd26Amt), ytd26Amt > 500000 ? "#34d399" : ytd26Amt > 0 ? "#22d3ee" : "#4a7fa8"), divider, lbl("Units"), bigV(ytd26Units, ytd26Units > 15 ? "#34d399" : ytd26Units > 5 ? "#22d3ee" : "#4a7fa8")), /*#__PURE__*/React.createElement("div", {
     style: {
       background: "#0d1e32",
       border: `1px solid ${groupColor}55`,
       borderRadius: 6,
       padding: "12px 14px"
     }
-  }, lbl("Dec 2025", groupColor), /*#__PURE__*/React.createElement("div", {
+  }, lbl(curMoLabel + " 2026", groupColor), /*#__PURE__*/React.createElement("div", {
     style: {
       color: "#4a7fa8",
-      fontSize: 15,
+      fontSize: 14,
       marginBottom: 8
     }
-  }, "Last month on record"), lbl("Funded $"), bigV(fmt$(decAmt), decAmt >= rep.expMonthly ? "#34d399" : decAmt > 0 ? "#fbbf24" : "#f87171"), divider, lbl("Units"), bigV(decUnits, decUnits >= 4 ? "#34d399" : decUnits > 0 ? "#fbbf24" : "#f87171")));
+  }, "Current month"), lbl("Funded $"), bigV(fmt$(curAmt), curAmt >= rep.expMonthly ? "#34d399" : curAmt > 0 ? "#fbbf24" : "#f87171"), divider, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 14
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "#7ec8e3",
+      fontSize: 12,
+      letterSpacing: 1,
+      fontWeight: 700,
+      marginBottom: 2
+    }
+  }, "UNITS"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: curUnits > 0 ? "#22d3ee" : "#4a7fa8",
+      fontFamily: "'Bebas Neue',sans-serif",
+      fontSize: 26
+    }
+  }, curUnits || "—")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "#7ec8e3",
+      fontSize: 12,
+      letterSpacing: 1,
+      fontWeight: 700,
+      marginBottom: 2
+    }
+  }, "SENT"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: curSent > 0 ? "#94b8cc" : "#4a7fa8",
+      fontFamily: "'Bebas Neue',sans-serif",
+      fontSize: 26
+    }
+  }, curSent || "—")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "#7ec8e3",
+      fontSize: 12,
+      letterSpacing: 1,
+      fontWeight: 700,
+      marginBottom: 2
+    }
+  }, "APPR"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: curApproved > 0 ? "#fbbf24" : "#4a7fa8",
+      fontFamily: "'Bebas Neue',sans-serif",
+      fontSize: 26
+    }
+  }, curApproved || "—")))));
 }
 function useMeetings() {
   const {
@@ -11742,22 +11794,15 @@ function AppInner() {
   // ── Reps (v4): loaded from leaderboard-reps-v2 ────────────────────────────
   const [repDefs, setRepDefs] = useState([]); // [{name,start,group,expPos,tier,expTier,expMonthly,daysNext,active,...}]
   const [entryData, setEntryData] = useState({}); // {"name::year::month": {sent,...,pts,...}}
+  const [gistLoaded, setGistLoaded] = useState(false);
   useEffect(() => {
     (async () => {
       try {
-        const r = await storage.get(REPS_STORAGE_KEY);
-        if (r) setRepDefs(JSON.parse(r.value));
+        const [rr, dr] = await Promise.all([storage.get(REPS_STORAGE_KEY), storage.get(DATA_STORAGE_KEY)]);
+        if (rr) setRepDefs(JSON.parse(rr.value));
+        if (dr) setEntryData(JSON.parse(dr.value));
       } catch (e) {}
-    })();
-  }, []);
-  useEffect(() => {
-    (async () => {
-      try {
-        const r = await storage.get(DATA_STORAGE_KEY);
-        if (r) {
-          setEntryData(JSON.parse(r.value));
-        }
-      } catch (e) {}
+      setGistLoaded(true);
     })();
   }, []);
   const saveReps = async next => {
@@ -11869,12 +11914,6 @@ function AppInner() {
   const [statusFilt, setStatusFilt] = useState("all");
   const _curMo = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][new Date().getMonth()];
   const [lbPeriod, setLbPeriod] = useState(_curMo); // leaderboard period — shared so header counts match
-  // Re-apply current month once Gist data finishes loading so leaderboard isn't blank on refresh
-  useEffect(() => {
-    if (Object.keys(entryData).length > 0) {
-      setLbPeriod(_curMo);
-    }
-  }, [entryData]);
   const [meetingMode, setMeetingMode] = useState(false);
   const [focusRep, setFocusRep] = useState(null);
   // Stable alphabetical anon map: "Rep 01" … "Rep 35"
@@ -12251,7 +12290,32 @@ function AppInner() {
   }))) : view === "compare" ? /*#__PURE__*/React.createElement(TeamComparisonView, {
     onSel: setSel,
     active: ACTIVE
-  }) : view === "repcompare" ? /*#__PURE__*/React.createElement(RepCompareView, null) : view === "depthead" ? /*#__PURE__*/React.createElement(DeptHeadView, null) : view === "products" ? /*#__PURE__*/React.createElement(ProductMixView, null) : view === "data" ? /*#__PURE__*/React.createElement(DataEntryView, null) : view === "roster" ? /*#__PURE__*/React.createElement(RosterView, null) : view === "bench" ? /*#__PURE__*/React.createElement(BenchmarksView, null) : /*#__PURE__*/React.createElement(LeaderboardView, {
+  }) : view === "repcompare" ? /*#__PURE__*/React.createElement(RepCompareView, null) : view === "depthead" ? /*#__PURE__*/React.createElement(DeptHeadView, null) : view === "products" ? /*#__PURE__*/React.createElement(ProductMixView, null) : view === "data" ? /*#__PURE__*/React.createElement(DataEntryView, null) : view === "roster" ? /*#__PURE__*/React.createElement(RosterView, null) : view === "bench" ? /*#__PURE__*/React.createElement(BenchmarksView, null) : !gistLoaded ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      height: 300,
+      gap: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 40,
+      height: 40,
+      border: "3px solid #1a3550",
+      borderTop: "3px solid #22d3ee",
+      borderRadius: "50%",
+      animation: "spin 0.8s linear infinite"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "#4a7fa8",
+      fontFamily: "'DM Mono',monospace",
+      fontSize: 13,
+      letterSpacing: 1
+    }
+  }, "LOADING DATA..."), /*#__PURE__*/React.createElement("style", null, `@keyframes spin{to{transform:rotate(360deg)}}`)) : /*#__PURE__*/React.createElement(LeaderboardView, {
     onSel: setSel,
     statusFilt: statusFilt,
     setStatusFilt: setStatusFilt,
