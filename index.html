@@ -8495,7 +8495,22 @@ function DataEntryView() {
 
   // ── CSV Parser (year-aware) ─────────────────────────────────────────────────
   const parseCSV = (text, allReps) => {
-    const lines = text.trim().split(/\r?\n/);
+    // Collapse embedded newlines inside quoted fields before splitting into lines
+    let cleaned = "";
+    let inQ = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === '"') {
+        if (inQ && text[i + 1] === '"') { cleaned += '""'; i++; }
+        else { inQ = !inQ; cleaned += ch; }
+      } else if ((ch === '\r' || ch === '\n') && inQ) {
+        cleaned += ' '; // replace embedded newline with a space
+        if (ch === '\r' && text[i + 1] === '\n') i++; // skip \r\n pair
+      } else {
+        cleaned += ch;
+      }
+    }
+    const lines = cleaned.trim().split(/\r?\n/);
     if (lines.length < 2) return { error: "File appears empty" };
 
     const rawHeaders = parseCSVLine(lines[0]).map(h => h.trim().replace(/^"|"$/g, ""));
