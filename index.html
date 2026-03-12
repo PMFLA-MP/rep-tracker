@@ -5722,7 +5722,7 @@ function RepMeetingPanel({
         letterSpacing: .5,
         whiteSpace: "nowrap"
       }
-    }, isMet ? "✓ MET" : "📅 SCHED"), /*#__PURE__*/React.createElement("span", {
+    }, isMet ? "✓ MET" : "?? SCHED"), /*#__PURE__*/React.createElement("span", {
       style: {
         color: "#e2e8f0",
         fontSize: 15,
@@ -8305,49 +8305,62 @@ function DataEntryView() {
     result.push(cur);
     return result;
   };
-  const HEADER_MAP = {
-    "rep name": "rep",
-    "rep": "rep",
-    "name": "rep",
-    "rep/name": "rep",
-    "month": "month",
-    "close month": "month",
-    "funding month": "month",
-    "year": "year",
-    "fiscal year": "year",
-    "yr": "year",
-    "apps sent": "sent",
-    "sent": "sent",
-    "submissions": "sent",
-    "submitted": "sent",
-    "apps submitted": "sent",
-    "received": "received",
-    "apps received": "received",
-    "apps rec": "received",
-    "received apps": "received",
-    "approved": "approved",
-    "apps approved": "approved",
-    "apps app": "approved",
-    "approved apps": "approved",
-    "units": "funded",
-    "units funded": "funded",
-    "funded units": "funded",
-    "deals": "funded",
-    "deal": "funded",
-    "funded deals": "funded",
-    "funded amount": "fundedAmt",
-    "funded $": "fundedAmt",
-    "amount funded": "fundedAmt",
-    "revenue": "fundedAmt",
-    "funding amount": "fundedAmt",
-    "funded amt": "fundedAmt",
-    "total funded": "fundedAmt",
-    "meeting %": "meetingPct",
-    "meeting pct": "meetingPct",
-    "mtg %": "meetingPct",
-    "mtg pct": "meetingPct",
-    "meeting": "meetingPct",
-    "attendance %": "meetingPct"
+  // ─── Legacy pre-aggregated CSV map (backward compat) ─────────────────────────
+  const LEGACY_HEADER_MAP = {
+    "rep name": "rep", "rep": "rep", "name": "rep", "rep/name": "rep",
+    "month": "month", "close month": "month", "funding month": "month",
+    "year": "year", "fiscal year": "year", "yr": "year",
+    "apps sent": "sent", "sent": "sent", "submissions": "sent", "submitted": "sent", "apps submitted": "sent",
+    "received": "received", "apps received": "received", "apps rec": "received", "received apps": "received",
+    "approved": "approved", "apps approved": "approved", "apps app": "approved", "approved apps": "approved",
+    "units": "funded", "units funded": "funded", "funded units": "funded", "deals": "funded", "deal": "funded", "funded deals": "funded",
+    "funded amount": "fundedAmt", "funded $": "fundedAmt", "amount funded": "fundedAmt",
+    "revenue": "fundedAmt", "funding amount": "fundedAmt", "funded amt": "fundedAmt", "total funded": "fundedAmt",
+    "meeting %": "meetingPct", "meeting pct": "meetingPct", "mtg %": "meetingPct",
+    "mtg pct": "meetingPct", "meeting": "meetingPct", "attendance %": "meetingPct"
+  };
+
+  // ─── SF Export sheet-type detection ──────────────────────────────────────────
+  const detectSheetType = (headers) => {
+    const h = headers.map(x => x.toLowerCase().trim());
+    if (h.includes("funded date") && h.includes("combined reps")) return "funded";
+    if (h.includes("app sent date") && !h.includes("funded date"))  return "app_sent";
+    if (h.includes("app received date") && !h.includes("funded date")) return "app_received";
+    if (h.includes("approved date") && !h.includes("funded date"))  return "approved";
+    if (h.includes("activity rep"))   return "calls_220";
+    if (h.includes("lead owner alias")) return "calls_rit_leads";
+    if (h.includes("iso sales rep") && h.includes("assigned alias")) return "calls_rit_opps";
+    if (h.includes("assigned") && h.includes("created by") && h.includes("subject")) return "calls_reps";
+    // Legacy: pre-aggregated with Rep + Month columns
+    if ((h.includes("rep") || h.includes("rep name") || h.includes("name")) &&
+        (h.includes("month") || h.includes("close month") || h.includes("funding month"))) return "legacy";
+    return null;
+  };
+
+  const SHEET_LABELS = {
+    funded: "Funded", app_sent: "App Sent", app_received: "App Received",
+    approved: "Approved", calls_220: "Call Log (2/20+)", calls_reps: "Call Log (Reps)",
+    calls_rit_leads: "Call Log (RIT Leads)", calls_rit_opps: "Call Log (RIT Opps)", legacy: "Legacy (pre-aggregated)"
+  };
+
+  // Parse "M/D/YYYY ..." → { month: "Jan", year: "2026" }
+  const parseDateMY = (dateStr) => {
+    if (!dateStr || !dateStr.trim()) return null;
+    const dateOnly = dateStr.trim().split(/[\sT]/)[0];
+    const parts = dateOnly.split("/");
+    if (parts.length === 3) {
+      const mo = parseInt(parts[0], 10);
+      const yr = parts[2].length === 4 ? parts[2] : null;
+      if (!yr || isNaN(mo) || mo < 1 || mo > 12) return null;
+      return { month: ALL_MONTHS[mo - 1], year: yr };
+    }
+    return null;
+  };
+
+  // Split "Ariel Kay, Chris M" → ["Ariel Kay", "Chris M"]
+  const splitReps = (str) => {
+    if (!str || !str.trim()) return [];
+    return str.split(/[,;]/).map(s => s.trim()).filter(Boolean);
   };
 
   // Storage key format: "rep::YYYY::Mon" — year-aware, no collisions
@@ -8476,93 +8489,200 @@ function DataEntryView() {
   // ── CSV Parser (year-aware) ─────────────────────────────────────────────────
   const parseCSV = (text, allReps) => {
     const lines = text.trim().split(/\r?\n/);
-    if (lines.length < 2) return {
-      error: "File appears empty"
-    };
-    const rawHeaders = parseCSVLine(lines[0]).map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
-    const colMap = {};
-    rawHeaders.forEach((h, i) => {
-      const mapped = HEADER_MAP[h];
-      if (mapped && !(mapped in colMap)) colMap[mapped] = i;
-    });
-    if (!("rep" in colMap)) return {
-      error: "Could not find Rep Name column. Expected: 'Rep Name', 'Rep', or 'Name'"
-    };
-    if (!("month" in colMap)) return {
-      error: "Could not find Month column. Expected: 'Month'"
-    };
-    const hasYearCol = "year" in colMap;
-    const detectedCols = Object.keys(colMap).filter(k => k !== "rep" && k !== "month" && k !== "year");
-    const rows = [];
-    const errors = [];
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      const cells = parseCSVLine(line);
-      const clean = cells.map(c => c.trim().replace(/^"|"$/g, "").replace(/""/g, '"'));
-      const repName = clean[colMap.rep]?.trim();
-      let monthRaw = clean[colMap.month]?.trim();
-      if (!repName || !monthRaw) {
-        errors.push(`Row ${i + 1}: missing rep or month`);
-        continue;
-      }
+    if (lines.length < 2) return { error: "File appears empty" };
 
-      // Detect year embedded in month cell: "Jan 2025", "Jan-2025", "2025-01", "01/2025"
-      let yearFromCell = null;
-      const yearMatch = monthRaw.match(/\b(20\d{2})\b/);
-      if (yearMatch) {
-        yearFromCell = yearMatch[1];
-        monthRaw = monthRaw.replace(yearMatch[0], "").replace(/[-/,\s]+/g, "");
-      }
+    const rawHeaders = parseCSVLine(lines[0]).map(h => h.trim().replace(/^"|"$/g, ""));
+    const lowerHeaders = rawHeaders.map(h => h.toLowerCase().trim());
+    const sheetType = detectSheetType(lowerHeaders);
 
-      // Normalize month abbreviation
-      const moRaw = monthRaw.trim().slice(0, 3);
-      const validMo = ALL_MONTHS.find(m => m.toLowerCase() === moRaw.toLowerCase());
-      if (!validMo) {
-        errors.push(`Row ${i + 1}: unrecognized month "${monthRaw}"`);
-        continue;
-      }
+    if (!sheetType) return { error: "Could not identify sheet type. Headers don't match any expected SF export format." };
 
-      // Resolve year: column > embedded in cell > fallback to selYear
-      let yr = null;
-      if (hasYearCol) {
-        const yc = clean[colMap.year]?.trim();
-        if (/^20\d{2}$/.test(yc)) yr = yc;
-      }
-      if (!yr && yearFromCell) yr = yearFromCell;
-      if (!yr) yr = selYear; // fall back to currently selected year in form
-
-      // Match rep name to roster
-      const matched = allReps.find(r => r.name.toLowerCase() === repName.toLowerCase());
-      if (!matched) {
-        errors.push(`Row ${i + 1}: rep "${repName}" not in roster (check spelling)`);
-        continue;
-      }
-      const entry = {
-        rep: matched.name,
-        year: yr,
-        month: validMo
-      };
-      detectedCols.forEach(col => {
-        const raw = clean[colMap[col]]?.replace(/[$,%\s]/g, "");
-        const val = parseFloat(raw);
-        if (!isNaN(val)) entry[col] = val;
+    // ── Legacy (pre-aggregated) path ──────────────────────────────────────────
+    if (sheetType === "legacy") {
+      const colMap = {};
+      lowerHeaders.forEach((h, i) => {
+        const mapped = LEGACY_HEADER_MAP[h];
+        if (mapped && !(mapped in colMap)) colMap[mapped] = i;
       });
-      rows.push(entry);
+      if (!("rep" in colMap)) return { error: "Could not find Rep Name column." };
+      if (!("month" in colMap)) return { error: "Could not find Month column." };
+      const hasYearCol = "year" in colMap;
+      const detectedCols = Object.keys(colMap).filter(k => k !== "rep" && k !== "month" && k !== "year");
+      const rows = [], errors = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim(); if (!line) continue;
+        const clean = parseCSVLine(line).map(c => c.trim().replace(/^"|"$/g, "").replace(/""/g, '"'));
+        const repName = clean[colMap.rep]?.trim();
+        let monthRaw = clean[colMap.month]?.trim();
+        if (!repName || !monthRaw) { errors.push(`Row ${i+1}: missing rep or month`); continue; }
+        let yearFromCell = null;
+        const yearMatch = monthRaw.match(/\b(20\d{2})\b/);
+        if (yearMatch) { yearFromCell = yearMatch[1]; monthRaw = monthRaw.replace(yearMatch[0], "").replace(/[-/,\s]+/g, ""); }
+        const moRaw = monthRaw.trim().slice(0, 3);
+        const validMo = ALL_MONTHS.find(m => m.toLowerCase() === moRaw.toLowerCase());
+        if (!validMo) { errors.push(`Row ${i+1}: unrecognized month "${monthRaw}"`); continue; }
+        let yr = null;
+        if (hasYearCol) { const yc = clean[colMap.year]?.trim(); if (/^20\d{2}$/.test(yc)) yr = yc; }
+        if (!yr && yearFromCell) yr = yearFromCell;
+        if (!yr) yr = selYear;
+        const matched = allReps.find(r => r.name.toLowerCase() === repName.toLowerCase());
+        if (!matched) { errors.push(`Row ${i+1}: rep "${repName}" not in roster`); continue; }
+        const entry = { rep: matched.name, year: yr, month: validMo };
+        detectedCols.forEach(col => {
+          const raw = clean[colMap[col]]?.replace(/[$,%\s]/g, "");
+          const val = parseFloat(raw);
+          if (!isNaN(val)) entry[col] = val;
+        });
+        rows.push(entry);
+      }
+      const yearCounts = {};
+      rows.forEach(r => { yearCounts[r.year] = (yearCounts[r.year] || 0) + 1; });
+      return { cols: detectedCols, rows, errors, yearCounts, hasYearCol, sheetType, sheetLabel: SHEET_LABELS[sheetType] };
     }
 
-    // Group preview by year for summary
-    const yearCounts = {};
-    rows.forEach(r => {
-      yearCounts[r.year] = (yearCounts[r.year] || 0) + 1;
-    });
-    return {
-      cols: detectedCols,
-      rows,
-      errors,
-      yearCounts,
-      hasYearCol
+    // ── SF deal-level path ────────────────────────────────────────────────────
+    // Build column index map by lowercase header
+    const col = {};
+    lowerHeaders.forEach((h, i) => { col[h] = i; });
+    const getCell = (cells, colName) => {
+      const idx = col[colName];
+      return idx !== undefined ? (cells[idx] || "").trim().replace(/^"|"$/g, "") : "";
     };
+
+    // Accumulator: key = "rep::year::month"
+    const acc = {};
+    const errors = [];
+
+    const matchRep = (name) => allReps.find(r => r.name.toLowerCase() === name.toLowerCase());
+
+    const ensureAcc = (repName, year, month) => {
+      const matched = matchRep(repName);
+      if (!matched) return null;
+      const k = `${matched.name}::${year}::${month}`;
+      if (!acc[k]) acc[k] = {
+        rep: matched.name, year, month,
+        sent: 0, received: 0, approved: 0, funded: 0, fundedAmt: 0,
+        dials: 0, highestApproval: 0, totalApproval: 0, approvalCount: 0
+      };
+      return k;
+    };
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim(); if (!line) continue;
+      const cells = parseCSVLine(line).map(c => c.trim().replace(/^"|"$/g, "").replace(/""/g, '"'));
+
+      if (sheetType === "app_sent") {
+        const rep = getCell(cells, "sales rep");
+        const parsed = parseDateMY(getCell(cells, "app sent date"));
+        if (!rep || !parsed) { errors.push(`Row ${i+1}: missing rep or App Sent Date`); continue; }
+        const k = ensureAcc(rep, parsed.year, parsed.month);
+        if (!k) { errors.push(`Row ${i+1}: "${rep}" not in roster`); continue; }
+        acc[k].sent++;
+
+      } else if (sheetType === "app_received") {
+        const rep = getCell(cells, "sales rep");
+        const parsed = parseDateMY(getCell(cells, "app received date"));
+        if (!rep || !parsed) { errors.push(`Row ${i+1}: missing rep or App Received Date`); continue; }
+        const k = ensureAcc(rep, parsed.year, parsed.month);
+        if (!k) { errors.push(`Row ${i+1}: "${rep}" not in roster`); continue; }
+        acc[k].received++;
+
+      } else if (sheetType === "approved") {
+        const parsed = parseDateMY(getCell(cells, "approved date"));
+        if (!parsed) { errors.push(`Row ${i+1}: missing Approved Date`); continue; }
+        const highAppr = parseFloat(getCell(cells, "highest approval").replace(/[$,]/g, "")) || 0;
+        const creditReps = [
+          getCell(cells, "sales rep"),
+          getCell(cells, "closer"),
+          getCell(cells, "closer2")
+        ].filter(Boolean);
+        const seen = new Set();
+        creditReps.forEach(rep => {
+          if (seen.has(rep.toLowerCase())) return; seen.add(rep.toLowerCase());
+          const k = ensureAcc(rep, parsed.year, parsed.month);
+          if (k) {
+            acc[k].approved++;
+            if (highAppr > acc[k].highestApproval) acc[k].highestApproval = highAppr;
+            acc[k].totalApproval += highAppr;
+            acc[k].approvalCount++;
+          }
+        });
+
+      } else if (sheetType === "funded") {
+        const parsed = parseDateMY(getCell(cells, "funded date"));
+        if (!parsed) { errors.push(`Row ${i+1}: missing Funded Date`); continue; }
+        const fundedAmt = parseFloat(getCell(cells, "funded $").replace(/[$,]/g, "")) || 0;
+        const highAppr = parseFloat(getCell(cells, "highest approval").replace(/[$,]/g, "")) || 0;
+        // Combined Reps = everyone in that field (comma-separated)
+        const combinedReps = splitReps(getCell(cells, "combined reps"));
+        const closer  = getCell(cells, "closer");
+        const closer2 = getCell(cells, "closer2");
+        // Add Closer/Closer2 to credit list if not already in Combined Reps
+        const combinedLower = combinedReps.map(r => r.toLowerCase());
+        if (closer  && !combinedLower.includes(closer.toLowerCase()))  combinedReps.push(closer);
+        if (closer2 && !combinedLower.includes(closer2.toLowerCase())) combinedReps.push(closer2);
+        const seen = new Set();
+        combinedReps.forEach(rep => {
+          if (!rep || seen.has(rep.toLowerCase())) return; seen.add(rep.toLowerCase());
+          const k = ensureAcc(rep, parsed.year, parsed.month);
+          if (k) {
+            acc[k].funded++;
+            acc[k].fundedAmt += fundedAmt;
+            if (highAppr > acc[k].highestApproval) acc[k].highestApproval = highAppr;
+            acc[k].totalApproval += highAppr;
+            acc[k].approvalCount++;
+          }
+        });
+
+      } else if (sheetType === "calls_220") {
+        const subject = getCell(cells, "subject"); if (!subject) continue;
+        const rep = getCell(cells, "activity rep");
+        const parsed = parseDateMY(getCell(cells, "date"));
+        if (!rep || !parsed) { errors.push(`Row ${i+1}: missing rep or date`); continue; }
+        const k = ensureAcc(rep, parsed.year, parsed.month);
+        if (k) acc[k].dials++;
+
+      } else if (sheetType === "calls_reps") {
+        const subject = getCell(cells, "subject"); if (!subject) continue;
+        const rep = getCell(cells, "assigned");
+        const parsed = parseDateMY(getCell(cells, "date"));
+        if (!rep || !parsed) { errors.push(`Row ${i+1}: missing rep or date`); continue; }
+        const k = ensureAcc(rep, parsed.year, parsed.month);
+        if (k) acc[k].dials++;
+
+      } else if (sheetType === "calls_rit_leads") {
+        const subject = getCell(cells, "subject"); if (!subject) continue;
+        const rawRep = getCell(cells, "lead owner alias");
+        const rep = rawRep.replace(/^RIT\s*[-–]\s*/i, "").trim();
+        const parsed = parseDateMY(getCell(cells, "date"));
+        if (!rep || !parsed) { errors.push(`Row ${i+1}: missing rep or date`); continue; }
+        const k = ensureAcc(rep, parsed.year, parsed.month);
+        if (k) acc[k].dials++;
+
+      } else if (sheetType === "calls_rit_opps") {
+        const subject = getCell(cells, "subject"); if (!subject) continue;
+        const rep = getCell(cells, "iso sales rep");
+        if (!rep) continue; // rep didn't self-assign — no credit
+        const parsed = parseDateMY(getCell(cells, "date"));
+        if (!parsed) { errors.push(`Row ${i+1}: missing date`); continue; }
+        const k = ensureAcc(rep, parsed.year, parsed.month);
+        if (k) acc[k].dials++;
+      }
+    }
+
+    // Finalize rows
+    const rows = Object.values(acc).map(e => ({
+      ...e,
+      avgApproval: e.approvalCount > 0 ? Math.round(e.totalApproval / e.approvalCount) : 0
+    }));
+
+    const fieldKeys = ["sent","received","approved","funded","fundedAmt","dials","highestApproval"];
+    const detectedCols = fieldKeys.filter(k => rows.some(r => r[k] > 0));
+
+    const yearCounts = {};
+    rows.forEach(r => { yearCounts[r.year] = (yearCounts[r.year] || 0) + 1; });
+
+    return { cols: detectedCols, rows, errors, yearCounts, hasYearCol: true, sheetType, sheetLabel: SHEET_LABELS[sheetType] };
   };
   const handleFileUpload = e => {
     const file = e.target.files[0];
@@ -8583,22 +8703,25 @@ function DataEntryView() {
   const commitCSV = async () => {
     if (!csvPreview) return;
     setCsvImporting(true);
-    const next = {
-      ...pending
-    };
+    const next = { ...pending };
+    const MERGE_FIELDS = ["sent","received","approved","funded","fundedAmt","dials","highestApproval","avgApproval","totalApproval","approvalCount","meetingPct","pts"];
     csvPreview.rows.forEach(entry => {
       const key = makeKey(entry.rep, entry.year, entry.month);
-      next[key] = {
-        ...entry,
-        savedAt: new Date().toISOString()
-      };
+      const existing = next[key] || {};
+      const merged = { ...existing, rep: entry.rep, year: entry.year, month: entry.month };
+      // Only overwrite fields that are actually present and non-zero in this import
+      MERGE_FIELDS.forEach(field => {
+        if (entry[field] !== undefined && entry[field] > 0) merged[field] = entry[field];
+      });
+      merged.savedAt = new Date().toISOString();
+      next[key] = merged;
     });
     await savePending(next);
     setCsvPreview(null);
     setCsvImporting(false);
-    const summary = Object.entries(csvPreview.yearCounts).map(([y, n]) => `${n} rows in ${y}`).join(", ");
-    setCsvMsg(`✓ Imported ${csvPreview.rows.length} entries — ${summary}`);
-    setTimeout(() => setCsvMsg(""), 5000);
+    const summary = Object.entries(csvPreview.yearCounts).map(([y, n]) => `${n} entries in ${y}`).join(", ");
+    setCsvMsg(`✓ Merged ${csvPreview.rows.length} ${csvPreview.sheetLabel || ""} rows — ${summary}`);
+    setTimeout(() => setCsvMsg(""), 6000);
   };
   const filteredReps = ALL_DE2.map(r => r.name).filter(n => n.toLowerCase().includes(search.toLowerCase()));
   const fmt$v = v => v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(0)}K` : v > 0 ? `$${Number(v).toLocaleString()}` : "—";
@@ -8626,7 +8749,15 @@ function DataEntryView() {
       letterSpacing: 2,
       marginBottom: 4
     }
-  }, "DATA ENTRY"), /*#__PURE__*/React.createElement("div", {
+  }, "DATA ENTRY"), /*#__PURE__*/React.createElement("button", {
+    onClick: async () => {
+      if (!window.confirm("Clear ALL performance data from Gist? This cannot be undone.")) return;
+      await savePending({});
+      setCsvMsg("✓ All data cleared from Gist.");
+      setTimeout(() => setCsvMsg(""), 5000);
+    },
+    style: { background: "#1a0505", border: "1px solid #7f1d1d", borderRadius: 5, padding: "3px 10px", color: "#f87171", fontSize: 12, cursor: "pointer", fontWeight: 700, letterSpacing: 1, marginLeft: 12 }
+  }, "CLEAR ALL DATA"), /*#__PURE__*/React.createElement("div", {
     style: {
       color: "#4a7fa8",
       fontSize: 14,
@@ -8770,7 +8901,7 @@ function DataEntryView() {
       fontSize: 15,
       letterSpacing: 1
     }
-  }, "CSV PREVIEW \u2014 ", csvPreview.rows.length, " ROWS PARSED"), /*#__PURE__*/React.createElement("div", {
+  }, "CSV PREVIEW \u2014 ", csvPreview.rows.length, " ROWS PARSED", csvPreview.sheetLabel ? /*#__PURE__*/React.createElement("span", { style: { marginLeft: 10, background: "#0d2a1a", border: "1px solid #4ade8044", borderRadius: 4, padding: "2px 8px", color: "#4ade80", fontSize: 13, fontWeight: 600, letterSpacing: 1 } }, csvPreview.sheetLabel) : null), /*#__PURE__*/React.createElement("div", {
     style: {
       color: "#4a7fa8",
       fontSize: 13,
@@ -9356,169 +9487,92 @@ function DataEntryView() {
       marginBottom: 6
     }
   }, "\uD83D\uDCCB CSV COLUMN MAPPING REFERENCE"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: "#7ec8e3",
-      fontSize: 14,
-      marginBottom: 16
+    style: { color: "#4a7fa8", fontSize: 13, marginBottom: 20, lineHeight: 1.7 }
+  }, "Upload one SF export at a time. Sheet type is auto-detected from headers. Each import ", /*#__PURE__*/React.createElement("span", { style: { color: "#22d3ee" } }, "merges"), " into existing data — uploading a second sheet won\u2019t overwrite the first."),
+  ...[
+    {
+      label: "Funded", color: "#4ade80",
+      note: "From: Rep Performance Tracker \u2014 Funded YTD",
+      rows: [
+        { col: "Funded Date",           mapsTo: "funded units + fundedAmt", notes: "Count + sum $ by month" },
+        { col: "Funded $",              mapsTo: "fundedAmt",                notes: "$ signs and commas stripped" },
+        { col: "Highest Approval",      mapsTo: "highestApproval / avgApproval", notes: "\u2014" },
+        { col: "Combined Reps",         mapsTo: "funded credit",            notes: "Every rep listed gets credit" },
+        { col: "Closer",                mapsTo: "funded credit",            notes: "Gets funded credit" },
+        { col: "Closer2",               mapsTo: "funded credit",            notes: "Gets funded credit" },
+        { col: "Data Transfer From Rep",mapsTo: "rep credit",               notes: "Original rep before transfer" },
+        { col: "Data Transfer Date",    mapsTo: "attribution logic",        notes: "Stage date < this \u2192 credit original rep" },
+        { col: "Sales Rep",             mapsTo: "rep credit",               notes: "Primary attribution" },
+      ]
+    },
+    {
+      label: "App Sent", color: "#22d3ee",
+      note: "From: Rep Performance Tracker \u2014 App Sent YTD",
+      rows: [
+        { col: "App Sent Date", mapsTo: "sent", notes: "Count by month" },
+        { col: "Sales Rep",     mapsTo: "rep credit", notes: "Case-insensitive, matched against roster" },
+      ]
+    },
+    {
+      label: "App Received", color: "#22d3ee",
+      note: "From: Rep Performance Tracker \u2014 App Received YTD",
+      rows: [
+        { col: "App Received Date", mapsTo: "received", notes: "Count by month" },
+        { col: "Sales Rep",         mapsTo: "rep credit", notes: "Case-insensitive, matched against roster" },
+      ]
+    },
+    {
+      label: "Approved", color: "#f59e0b",
+      note: "From: Rep Performance Tracker \u2014 Approved YTD",
+      rows: [
+        { col: "Approved Date",    mapsTo: "approved",                   notes: "Count by month" },
+        { col: "Highest Approval", mapsTo: "highestApproval / avgApproval", notes: "\u2014" },
+        { col: "Sales Rep",        mapsTo: "rep credit",                 notes: "Gets approved credit" },
+        { col: "Closer",           mapsTo: "rep credit",                 notes: "Gets approved credit" },
+        { col: "Closer2",          mapsTo: "rep credit",                 notes: "Gets approved credit" },
+      ]
+    },
+    {
+      label: "Call Logs (4 sheets)", color: "#a78bfa",
+      note: "Auto-detected by header pattern \u2014 all feed into dials count",
+      rows: [
+        { col: "Calls_2_20_26 \u2192 Activity Rep",          mapsTo: "dials", notes: "Count if Subject is not blank" },
+        { col: "Calls_Reps \u2192 Assigned",                 mapsTo: "dials", notes: "Count if Subject is not blank" },
+        { col: "Calls_RIT_Leads \u2192 Lead Owner Alias",    mapsTo: "dials", notes: "Strip \u201cRIT - \u201d prefix \u00b7 count if Subject not blank" },
+        { col: "Calls_RIT_Opps \u2192 ISO Sales Rep",        mapsTo: "dials", notes: "Skip row if blank \u00b7 count if Subject not blank" },
+      ]
     }
-  }, "Row 1 of your CSV must contain headers. Any of the aliases below will be recognized \u2014 columns can be in any order."), /*#__PURE__*/React.createElement("div", {
-    style: {
-      overflowX: "auto"
-    }
-  }, /*#__PURE__*/React.createElement("table", {
-    style: {
-      width: "100%",
-      borderCollapse: "collapse"
-    }
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
-    style: {
-      background: "#06111f",
-      borderBottom: "2px solid #22d3ee44"
-    }
-  }, ["CSV HEADER — accepted aliases", "MAPS TO", "NOTES"].map(h => /*#__PURE__*/React.createElement("th", {
-    key: h,
-    style: {
-      padding: "10px 14px",
-      color: "#22d3ee",
-      fontSize: 13,
-      letterSpacing: 1.4,
-      textAlign: "left",
-      fontWeight: 700,
-      whiteSpace: "nowrap"
-    }
-  }, h)))), /*#__PURE__*/React.createElement("tbody", null, [{
-    aliases: ["Rep Name", "Rep", "Name", "Rep/Name"],
-    field: "Rep",
-    note: "Case-insensitive · matched against roster"
-  }, {
-    aliases: ["Month", "Close Month", "Funding Month"],
-    field: "Month",
-    note: 'Full name ("January"), abbreviation ("Jan"), or number ("01") · also accepts embedded year e.g. "Jan 2025"'
-  }, {
-    aliases: ["Year", "Fiscal Year", "Yr"],
-    field: "Year",
-    note: "Dedicated column — highest priority · overrides embedded year and fallback picker"
-  }, {
-    aliases: ["Apps Sent", "Sent", "Submissions", "Submitted", "Apps Submitted"],
-    field: "Apps Sent",
-    note: ""
-  }, {
-    aliases: ["Received", "Apps Received", "Apps Rec", "Received Apps"],
-    field: "Received",
-    note: ""
-  }, {
-    aliases: ["Approved", "Apps Approved", "Apps App", "Approved Apps"],
-    field: "Approved",
-    note: ""
-  }, {
-    aliases: ["Units", "Units Funded", "Funded Units", "Deals", "Deal", "Funded Deals"],
-    field: "Units Funded",
-    note: ""
-  }, {
-    aliases: ["Funded Amount", "Funded $", "Amount Funded", "Revenue", "Funding Amount", "Funded Amt", "Total Funded"],
-    field: "Funded $",
-    note: "$ signs and commas stripped automatically"
-  }, {
-    aliases: ["Meeting %", "Meeting Pct", "MTG %", "MTG Pct", "Meeting", "Attendance %"],
-    field: "Meeting %",
-    note: "% sign stripped automatically"
-  }].map((row, i) => /*#__PURE__*/React.createElement("tr", {
-    key: row.field,
-    style: {
-      borderBottom: "1px solid #0f2438",
-      background: i % 2 === 0 ? "#0d1e32" : "#0a1728"
-    }
-  }, /*#__PURE__*/React.createElement("td", {
-    style: {
-      padding: "11px 14px",
-      verticalAlign: "middle"
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      flexWrap: "wrap",
-      gap: 5
-    }
-  }, row.aliases.map(a => /*#__PURE__*/React.createElement("span", {
-    key: a,
-    style: {
-      background: "#071422",
-      border: "1px solid #22d3ee55",
-      borderRadius: 4,
-      padding: "3px 9px",
-      color: "#22d3ee",
-      fontFamily: "'DM Mono',monospace",
-      fontSize: 14,
-      whiteSpace: "nowrap"
-    }
-  }, a)))), /*#__PURE__*/React.createElement("td", {
-    style: {
-      padding: "11px 14px",
-      verticalAlign: "middle",
-      whiteSpace: "nowrap"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#f1f5f9",
-      fontWeight: 700,
-      fontSize: 15
-    }
-  }, row.field)), /*#__PURE__*/React.createElement("td", {
-    style: {
-      padding: "11px 14px",
-      verticalAlign: "middle",
-      color: "#94b8cc",
-      fontSize: 14,
-      lineHeight: 1.6
-    }
-  }, row.note || /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#2a4a6a"
-    }
-  }, "\u2014"))))))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 12,
-      padding: "10px 14px",
-      background: "#06111f",
-      border: "1px solid #1e3a5f",
-      borderRadius: 6,
-      fontSize: 14,
-      lineHeight: 1.8
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#fbbf24",
-      fontWeight: 700
-    }
-  }, "Year resolution order: "), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#22d3ee"
-    }
-  }, "\u2460 Year column"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#4a7fa8"
-    }
-  }, " \u2192 "), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#22d3ee"
-    }
-  }, "\u2461 Embedded in Month cell"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#7ec8e3"
-    }
-  }, " (e.g. \"Jan 2025\")"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#4a7fa8"
-    }
-  }, " \u2192 "), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#22d3ee"
-    }
-  }, "\u2462 Fallback Year picker"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#7ec8e3"
-    }
-  }, " in upload banner above. If your SF export has no year info, set the fallback picker before uploading."))));
+  ].map((section, si) => /*#__PURE__*/React.createElement("div", {
+    key: si,
+    style: { marginBottom: 18, background: "#0a1728", border: `1px solid ${section.color}22`, borderRadius: 8, overflow: "hidden" }
+  },
+    /*#__PURE__*/React.createElement("div", {
+      style: { background: `${section.color}11`, borderBottom: `1px solid ${section.color}33`, padding: "9px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }
+    },
+      /*#__PURE__*/React.createElement("span", { style: { color: section.color, fontWeight: 800, fontSize: 14, letterSpacing: 1 } }, section.label),
+      /*#__PURE__*/React.createElement("span", { style: { color: "#4a7fa8", fontSize: 12 } }, section.note)
+    ),
+    /*#__PURE__*/React.createElement("table", { style: { width: "100%", borderCollapse: "collapse" } },
+      /*#__PURE__*/React.createElement("thead", null,
+        /*#__PURE__*/React.createElement("tr", { style: { background: "#06111f" } },
+          ["SF Column", "Maps To", "Notes"].map(h => /*#__PURE__*/React.createElement("th", {
+            key: h, style: { padding: "7px 14px", color: "#22d3ee", fontSize: 12, letterSpacing: 1.2, textAlign: "left", fontWeight: 700, whiteSpace: "nowrap" }
+          }, h))
+        )
+      ),
+      /*#__PURE__*/React.createElement("tbody", null,
+        section.rows.map((row, ri) => /*#__PURE__*/React.createElement("tr", {
+          key: ri, style: { borderBottom: "1px solid #0f2438", background: ri % 2 === 0 ? "#0d1e32" : "#0a1728" }
+        },
+          /*#__PURE__*/React.createElement("td", { style: { padding: "8px 14px" } },
+            /*#__PURE__*/React.createElement("span", { style: { background: "#071422", border: `1px solid ${section.color}55`, borderRadius: 4, padding: "3px 9px", color: section.color, fontFamily: "'DM Mono',monospace", fontSize: 13 } }, row.col)
+          ),
+          /*#__PURE__*/React.createElement("td", { style: { padding: "8px 14px", color: "#f1f5f9", fontWeight: 700, fontSize: 14, whiteSpace: "nowrap" } }, row.mapsTo),
+          /*#__PURE__*/React.createElement("td", { style: { padding: "8px 14px", color: "#94b8cc", fontSize: 13, lineHeight: 1.6 } }, row.notes)
+        ))
+      )
+    )
+  )));
 }
 
 // ─── RosterView ───────────────────────────────────────────────────────────────
@@ -12175,7 +12229,7 @@ function AppInner() {
     style: {
       fontSize: 17
     }
-  }, meetingMode ? "🎯" : "○"), meetingMode ? "EXIT MEETING" : "MEETING MODE"), /*#__PURE__*/React.createElement("button", {
+  }, meetingMode ? "??" : "○"), meetingMode ? "EXIT MEETING" : "MEETING MODE"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setView("bench"),
     style: {
       background: view === "bench" ? "#22d3ee18" : "none",
