@@ -1080,7 +1080,7 @@ function LeaderboardView({
       daysNext: r.daysNext
     };
     if (period === "2026") {
-      const ms = r.mos.filter(m => MOS_2025.includes(m.month));
+      const ms = r.mos.filter(m => m.year === "2026");
       const ptsTotal = r.decPts || 0;
       const mtgMs = ms.filter(m => m.meetingPct > 0);
       const totalFunded = ms.reduce((s, m) => s + (m.fundedAmt || 0), 0);
@@ -1094,7 +1094,7 @@ function LeaderboardView({
         daysNext: "—"
       };
     }
-    const mo = r.mos.find(m => m.month === period) || {};
+    const mo = r.mos.find(m => m.month === period && m.year === "2026") || {};
     const moFunded = mo.fundedAmt || 0;
     return {
       funded: moFunded,
@@ -1120,7 +1120,7 @@ function LeaderboardView({
   // avg monthly units AND avg monthly funded $ thresholds for the selected period.
   const calcPerfPos = r => {
     const pd = getPd(r);
-    const numMos = period === "all" ? r.mos.length : period === "2026" ? MOS_2025.filter(mo => r.mos.find(m => m.month === mo)).length : 1;
+    const numMos = period === "all" ? r.mos.length : period === "2026" ? r.mos.filter(m => m.year === "2026").length : 1;
     const avgUnits = numMos > 0 ? pd.units / numMos : 0;
     const avgFunded = numMos > 0 ? pd.funded / numMos : 0;
     const sorted = [...bm].sort((a, b) => b.tier - a.tier);
@@ -5724,7 +5724,7 @@ function RepDetail({
   }];
   const is26Mo = MOS26_OPTS.some(m => m.id === period);
   const periodLabel = period === "all" ? "ALL TIME" : period === "2026" ? "2026 YTD" : MOS26_OPTS.find(m => m.id === period)?.label || period;
-  const selMos = period === "all" ? rep.mos : period === "2026" ? rep.mos.filter(m => MOS_2025.includes(m.month)) : rep.mos.filter(m => m.month === period);
+  const selMos = period === "all" ? rep.mos : period === "2026" ? rep.mos.filter(m => m.year === "2026") : rep.mos.filter(m => m.month === period && m.year === "2026");
 
   // Period aggregates
   const selUnits = selMos.reduce((s, m) => s + (m.funded || 0), 0);
