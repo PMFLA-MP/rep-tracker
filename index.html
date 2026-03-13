@@ -5673,6 +5673,7 @@ function RepDetail({
   const selSent = selMos.reduce((s, m) => s + (m.sent || 0), 0);
   const selRec = selMos.reduce((s, m) => s + (m.received || 0), 0);
   const selApp = selMos.reduce((s, m) => s + (m.approved || 0), 0);
+  const selDials = selMos.reduce((s, m) => s + (m.dials || 0), 0);
   const nMos = Math.max(1, selMos.length);
   const avgUnitsPerMo = selUnits / nMos;
   const avgAmtPerMo = selAmt / nMos;
@@ -6126,27 +6127,7 @@ function RepDetail({
         cursor: "pointer",
         padding: 0
       }
-    }, "edit")), p !== null && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        height: 5,
-        background: "#0a1f35",
-        borderRadius: 3,
-        marginBottom: 3
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: `${p}%`,
-        height: "100%",
-        background: p >= 100 ? "#4ade80" : p >= 75 ? "#22d3ee" : p >= 50 ? "#fbbf24" : "#f87171",
-        borderRadius: 3,
-        transition: "width .3s"
-      }
-    })), /*#__PURE__*/React.createElement("div", {
-      style: {
-        color: p >= 100 ? "#4ade80" : p >= 75 ? "#22d3ee" : "#4a7fa8",
-        fontSize: 13
-      }
-    }, p, "% of monthly goal"))) : /*#__PURE__*/React.createElement("div", {
+    }, "edit"))) : /*#__PURE__*/React.createElement("div", {
       style: {
         marginTop: 4
       }
@@ -6189,6 +6170,10 @@ function RepDetail({
     label: "Approved",
     value: selApp,
     color: "#fbbf24"
+  }), /*#__PURE__*/React.createElement(MetricRow, {
+    label: "Funded",
+    value: selUnits,
+    color: selUnits > 0 ? "#4ade80" : "#4a7fa8"
   }), selSent > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       marginTop: 8,
@@ -6240,54 +6225,18 @@ function RepDetail({
     sub: "Funded \xF7 Sent",
     noLine: true
   })), /*#__PURE__*/React.createElement(StatBox, {
-    label: "Call Log (2025)",
+    label: "Call Log",
     onExpand: () => setDrill({
       key: "calls",
       title: "Call Log"
     })
-  }, calls.dials > 0 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(MetricRow, {
+  }, selDials > 0 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(MetricRow, {
     label: "Dials",
-    value: calls.dials.toLocaleString(),
-    color: "#f1f5f9"
-  }), /*#__PURE__*/React.createElement(MetricRow, {
-    label: "Contacts",
-    value: calls.contacts,
-    color: "#22d3ee"
-  }), /*#__PURE__*/React.createElement(MetricRow, {
-    label: "Contact Rate",
-    value: `${calls.contactPct}%`,
-    color: calls.contactPct >= 20 ? "#34d399" : calls.contactPct >= 10 ? "#fbbf24" : "#f87171",
-    sub: calls.contactPct >= 20 ? "Above target" : calls.contactPct >= 10 ? "Below average" : "Urgent — under 10%"
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: 6,
-      background: "#0a1f35",
-      borderRadius: 3
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: `${Math.min(100, calls.contactPct * 3)}%`,
-      height: "100%",
-      background: calls.contactPct >= 20 ? "#34d399" : calls.contactPct >= 10 ? "#fbbf24" : "#f87171",
-      borderRadius: 3
-    }
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: "#4a7fa8",
-      fontSize: 13,
-      marginTop: 4
-    }
-  }, "30%+ elite \xB7 20%+ strong \xB7 <10% urgent"))) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: "#4a7fa8",
-      fontSize: 15,
-      marginTop: 8
-    }
-  }, "No call data available")), /*#__PURE__*/React.createElement(StatBox, {
+    value: selDials.toLocaleString(),
+    color: "#a78bfa"
+  })) : /*#__PURE__*/React.createElement("div", {
+    style: { color: "#4a7fa8", fontSize: 15, marginTop: 8 }
+  }, "No call data")), /*#__PURE__*/React.createElement(StatBox, {
     label: "Monthly Points",
     onExpand: () => setDrill({
       key: "points",
