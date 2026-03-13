@@ -3150,7 +3150,7 @@ function LeaderboardView({
         flexWrap: "wrap"
       }
     }, [...allMos].reverse().map(m => {
-      const yr = "2025";
+      const yr = m.year || "—";
       return /*#__PURE__*/React.createElement("div", {
         key: m.month + yr,
         style: {
@@ -3952,7 +3952,7 @@ function MonthTable({
       letterSpacing: 1
     }
   }, c.label)))), /*#__PURE__*/React.createElement("tbody", null, reversed.map((m, i) => {
-    const yr = "2025";
+    const yr = m.year || "—";
     const isCurrentMonth = m.month === "Dec";
     return /*#__PURE__*/React.createElement("tr", {
       key: m.month,
@@ -4237,6 +4237,10 @@ function DrillDown({
         key: "approved",
         label: "APPROVED",
         colorFn: () => "#fbbf24"
+      }, {
+        key: "funded",
+        label: "FUNDED",
+        colorFn: v => v > 0 ? "#4ade80" : "#4a7fa8"
       }]
     }), /*#__PURE__*/React.createElement(DrillSectionHeader, {
       t: "All Months Chart"
@@ -4373,92 +4377,35 @@ function DrillDown({
         marginBottom: 12
       }
     }, /*#__PURE__*/React.createElement(ConvBlock, {
-      label: "2025 YTD (Oct\u2013Dec)",
-      mos: mos25,
-      c: "#a78bfa",
+      label: "2026 YTD",
+      mos: mos26,
+      c: "#22d3ee",
       pct: pct,
       convC: convC
     })));
   };
-  const renderCalls = () => /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(DrillSectionHeader, {
-    t: "Call Activity"
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "#0a1525",
-      border: "1px solid #1a3550",
-      borderRadius: 6,
-      padding: 16,
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: "#7ec8e3",
-      fontSize: 14,
-      fontWeight: 800,
-      letterSpacing: 1.5,
-      marginBottom: 12
-    }
-  }, "OCT \u2013 DEC 2025"), calls.dials > 0 ? /*#__PURE__*/React.createElement("div", null, [["Dials", String(calls.dials.toLocaleString()), "#f1f5f9"], ["Contacts", String(calls.contacts), "#22d3ee"], ["Contact Rate", calls.contactPct + "%", calls.contactPct >= 20 ? "#34d399" : calls.contactPct >= 10 ? "#fbbf24" : "#f87171"]].map(([l, v, c]) => /*#__PURE__*/React.createElement("div", {
-    key: l,
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      padding: "8px 0",
-      borderBottom: "1px solid #06101c"
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: "#94b8cc",
-      fontSize: 16,
-      fontWeight: 600
-    }
-  }, l), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: c,
-      fontFamily: "'Bebas Neue',sans-serif",
-      fontSize: 32
-    }
-  }, v))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 14,
-      height: 8,
-      background: "#0f2438",
-      borderRadius: 4
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: Math.min(100, calls.contactPct * 3) + "%",
-      height: "100%",
-      background: calls.contactPct >= 20 ? "#34d399" : calls.contactPct >= 10 ? "#fbbf24" : "#f87171",
-      borderRadius: 4
-    }
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      color: "#4a7fa8",
-      fontSize: 13,
-      marginTop: 5
-    }
-  }, /*#__PURE__*/React.createElement("span", null, "0%"), /*#__PURE__*/React.createElement("span", null, "10% urgent"), /*#__PURE__*/React.createElement("span", null, "20% strong"), /*#__PURE__*/React.createElement("span", null, "30%+ elite"))) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: "#4a7fa8",
-      fontSize: 15
-    }
-  }, "No call data")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "#0a1525",
-      border: "1px solid #1a3550",
-      borderRadius: 6,
-      padding: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: "#4a7fa8",
-      fontSize: 14,
-      fontStyle: "italic"
-    }
-  }, "\u26A0 Call activity shown covers the full 2025 period. Provide date-level call log to enable month-over-month comparison.")));
+  const renderCalls = () => {
+    const totalDials = mos26.reduce((s, m) => s + (m.dials || 0), 0);
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(DrillSectionHeader, {
+      t: "Month by Month \u2014 Most Recent First"
+    }), /*#__PURE__*/React.createElement(MonthTable, {
+      rep: rep,
+      groupColor: groupColor,
+      columns: [{
+        key: "dials",
+        label: "DIALS",
+        colorFn: v => v > 0 ? "#a78bfa" : "#4a7fa8"
+      }]
+    }), /*#__PURE__*/React.createElement(DrillSectionHeader, {
+      t: "YTD Total"
+    }), /*#__PURE__*/React.createElement("div", {
+      style: { background: "#0a1525", border: "1px solid #a78bfa33", borderRadius: 6, padding: 16, marginBottom: 12 }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: { color: "#a78bfa", fontSize: 13, letterSpacing: 1.2, fontWeight: 700, marginBottom: 6 }
+    }, "2026 YTD DIALS"), /*#__PURE__*/React.createElement("div", {
+      style: { color: "#f1f5f9", fontFamily: "'Bebas Neue',sans-serif", fontSize: 48, letterSpacing: 1 }
+    }, totalDials > 0 ? totalDials.toLocaleString() : "\u2014")));
+  };
   const renderPoints = () => {
     const total = ptsData.reduce((s, d) => s + d.pts, 0);
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(DrillSectionHeader, {
@@ -4488,7 +4435,7 @@ function DrillDown({
         letterSpacing: 1
       }
     }, h)))), /*#__PURE__*/React.createElement("tbody", null, [...ptsData].reverse().map((d, i) => {
-      const yr = "2025";
+      const yr = m.year || "—";
       const diff = d.pts - avgPts;
       return /*#__PURE__*/React.createElement("tr", {
         key: d.month,
@@ -7106,54 +7053,7 @@ function PrintView({
       fontSize: 12,
       marginTop: 3
     }
-  }, s)))), g > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: "#0d1e32",
-      border: "1px solid #1a3550",
-      borderRadius: 6,
-      padding: "10px 14px",
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 6
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: "#4a7fa8",
-      fontSize: 13,
-      letterSpacing: 1
-    }
-  }, "FEB GOAL PROGRESS"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: "#4a7fa8",
-      fontSize: 13
-    }
-  }, fmt$v(febAmt), " / ", fmt$v(g))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      height: 8,
-      background: "#0a1f35",
-      borderRadius: 4,
-      marginBottom: 4
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: `${goalPct}%`,
-      height: "100%",
-      background: goalPct >= 100 ? "#4ade80" : goalPct >= 75 ? "#22d3ee" : goalPct >= 50 ? "#fbbf24" : "#f87171",
-      borderRadius: 4,
-      transition: "width .3s"
-    }
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: goalPct >= 100 ? "#4ade80" : goalPct >= 75 ? "#22d3ee" : "#f87171",
-      fontSize: 14,
-      fontWeight: 700
-    }
-  }, goalPct, "% of monthly goal")), /*#__PURE__*/React.createElement("div", {
+  }, s)))), /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 14
     }
