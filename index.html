@@ -8647,6 +8647,44 @@ function DataEntryView() {
 
     return { cols: detectedCols, rows, errors, yearCounts, hasYearCol: true, sheetType, sheetLabel: SHEET_LABELS[sheetType] };
   };
+  const exportToCSV = () => {
+    if (!Object.keys(pending).length) {
+      alert("No data to export.");
+      return;
+    }
+    const cols = ["Rep", "Year", "Month", "Apps Sent", "Apps Received", "Approved", "Units Funded", "Funded $", "Dials", "Highest Approval", "Avg Approval"];
+    const rows = [cols.join(",")];
+    const sorted = Object.values(pending).sort((a, b) => {
+      if (a.rep < b.rep) return -1;
+      if (a.rep > b.rep) return 1;
+      if (a.year !== b.year) return parseInt(a.year) - parseInt(b.year);
+      return ALL_MONTHS.indexOf(a.month) - ALL_MONTHS.indexOf(b.month);
+    });
+    sorted.forEach(e => {
+      const row = [
+        '"' + (e.rep || "").replace(/"/g, '""') + '"',
+        e.year || "",
+        e.month || "",
+        e.sent || 0,
+        e.received || 0,
+        e.approved || 0,
+        e.funded || 0,
+        e.fundedAmt || 0,
+        e.dials || 0,
+        e.highestApproval || 0,
+        e.avgApproval || 0
+      ];
+      rows.push(row.join(","));
+    });
+    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "rep_tracker_export_" + new Date().toISOString().slice(0,10) + ".csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleFileUpload = e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -8720,7 +8758,10 @@ function DataEntryView() {
       setTimeout(() => setCsvMsg(""), 5000);
     },
     style: { background: "#1a0505", border: "1px solid #7f1d1d", borderRadius: 5, padding: "3px 10px", color: "#f87171", fontSize: 12, cursor: "pointer", fontWeight: 700, letterSpacing: 1, marginLeft: 12 }
-  }, "CLEAR ALL DATA"), /*#__PURE__*/React.createElement("div", {
+  }, "CLEAR ALL DATA"), /*#__PURE__*/React.createElement("button", {
+    onClick: exportToCSV,
+    style: { background: "#071422", border: "1px solid #22d3ee55", borderRadius: 5, padding: "3px 10px", color: "#22d3ee", fontSize: 12, cursor: "pointer", fontWeight: 700, letterSpacing: 1, marginLeft: 8 }
+  }, "⬇ EXPORT CSV"), /*#__PURE__*/React.createElement("div", {
     style: {
       color: "#4a7fa8",
       fontSize: 14,
