@@ -6037,7 +6037,7 @@ function RepDetail({
       marginBottom: 6
     }
   }, /*#__PURE__*/React.createElement(MiniBar, {
-    data: rep.mos.map(m => ({
+    data: rep.mos.filter(m => parseInt(m.year) >= 2026).map(m => ({
       month: m.month,
       units: m.funded || 0
     })),
@@ -6071,7 +6071,7 @@ function RepDetail({
       marginBottom: 6
     }
   }, /*#__PURE__*/React.createElement(MiniBar, {
-    data: rep.mos,
+    data: rep.mos.filter(m => parseInt(m.year) >= 2026),
     dataKey: "fundedAmt",
     color: groupColor,
     groupColor: groupColor,
@@ -6611,7 +6611,7 @@ function RepDetail({
       fontWeight: 800,
       whiteSpace: "nowrap"
     }
-  }, h)))), /*#__PURE__*/React.createElement("tbody", null, rep.mos.map((m, i) => {
+  }, h)))), /*#__PURE__*/React.createElement("tbody", null, rep.mos.filter(m => parseInt(m.year) >= 2026).map((m, i) => {
     const pts = m.month === "Feb" ? rep.febPts : m.month === "Jan" ? rep.janPts : m.month === "Dec" ? rep.decPts : null;
     const mClose = m.approved > 0 ? Math.round(m.funded / m.approved * 100) : null;
     const mCloseC = mClose === null ? "#4a7fa8" : mClose >= 70 ? "#34d399" : mClose >= 40 ? "#fbbf24" : "#f87171";
@@ -7187,7 +7187,7 @@ function PrintView({
       textAlign: "left",
       fontWeight: 700
     }
-  }, h)))), /*#__PURE__*/React.createElement("tbody", null, [...rep.mos].reverse().map((m, i) => {
+  }, h)))), /*#__PURE__*/React.createElement("tbody", null, [...rep.mos].filter(m => parseInt(m.year) >= 2026).reverse().map((m, i) => {
     const isFeb = m.month === "Feb";
     const appP = m.sent > 0 ? Math.round(m.approved / m.sent * 100) : 0;
     const closeP = m.sent > 0 ? Math.round(m.funded / m.sent * 100) : 0;
