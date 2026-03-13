@@ -8399,6 +8399,7 @@ function DataEntryView() {
   const [csvPreview, setCsvPreview] = useState(null);
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvMsg, setCsvMsg] = useState("");
+  const [forceSheetType, setForceSheetType] = useState(null);
   const fileRef = useRef();
   useEffect(() => {
     (async () => {
@@ -8507,7 +8508,7 @@ function DataEntryView() {
   };
 
   // ── CSV Parser (year-aware) ─────────────────────────────────────────────────
-  const parseCSV = (text, allReps) => {
+  const parseCSV = (text, allReps, forceType = null) => {
     // Collapse embedded newlines inside quoted fields before splitting into lines
     let cleaned = "";
     let inQ = false;
@@ -8528,9 +8529,9 @@ function DataEntryView() {
 
     const rawHeaders = parseCSVLine(lines[0]).map(h => h.trim().replace(/^"|"$/g, ""));
     const lowerHeaders = rawHeaders.map(h => h.toLowerCase().trim());
-    const sheetType = detectSheetType(lowerHeaders);
+    const sheetType = forceType || detectSheetType(lowerHeaders);
 
-    if (!sheetType) return { error: "Could not identify sheet type. Headers don't match any expected SF export format." };
+    if (!sheetType) return { error: "Could not identify sheet type. Please select a sheet type manually using the buttons above." };
 
     // ── Legacy (pre-aggregated) path ──────────────────────────────────────────
     if (sheetType === "legacy") {
@@ -8728,7 +8729,7 @@ function DataEntryView() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
-      const result = parseCSV(ev.target.result, ALL_DE2);
+      const result = parseCSV(ev.target.result, ALL_DE2, forceSheetType);
       if (result.error) {
         setCsvMsg(result.error);
         return;
@@ -8886,7 +8887,45 @@ function DataEntryView() {
       cursor: "pointer",
       fontWeight: selYear === y ? 700 : 400
     }
-  }, y)))), /*#__PURE__*/React.createElement("button", {
+  }, y)))), /*#__PURE__*/React.createElement("div", {
+    style: { marginBottom: 10 }
+  },
+    /*#__PURE__*/React.createElement("div", {
+      style: { color: "#4a7fa8", fontSize: 13, letterSpacing: .8, marginBottom: 6 }
+    }, "SHEET TYPE OVERRIDE (optional — use if auto-detect picks wrong type):"),
+    /*#__PURE__*/React.createElement("div", {
+      style: { display: "flex", flexWrap: "wrap", gap: 6 }
+    },
+      [
+        { key: null,             label: "AUTO-DETECT",        color: "#94b8cc" },
+        { key: "funded",         label: "FUNDED",             color: "#4ade80" },
+        { key: "app_sent",       label: "APP SENT",           color: "#22d3ee" },
+        { key: "app_received",   label: "APP RECEIVED",       color: "#22d3ee" },
+        { key: "approved",       label: "APPROVED",           color: "#f59e0b" },
+        { key: "calls_220",      label: "CALL LOG (2/20+)",   color: "#a78bfa" },
+        { key: "calls_reps",     label: "CALL LOG (REPS)",    color: "#a78bfa" },
+        { key: "calls_rit_leads",label: "CALL LOG (RIT LEADS)", color: "#a78bfa" },
+        { key: "calls_rit_opps", label: "CALL LOG (RIT OPPS)",  color: "#a78bfa" },
+      ].map(function(opt) {
+        const active = forceSheetType === opt.key;
+        return /*#__PURE__*/React.createElement("button", {
+          key: String(opt.key),
+          onClick: function() { setForceSheetType(opt.key); },
+          style: {
+            background: active ? opt.color + "22" : "#0a1525",
+            border: "1px solid " + (active ? opt.color : "#1a3550"),
+            borderRadius: 4,
+            padding: "4px 10px",
+            color: active ? opt.color : "#4a7fa8",
+            fontSize: 12,
+            cursor: "pointer",
+            fontWeight: active ? 700 : 400,
+            letterSpacing: .8
+          }
+        }, opt.label);
+      })
+    )
+  ), /*#__PURE__*/React.createElement("button", {
     onClick: () => fileRef.current?.click(),
     style: {
       background: "#0d2a4a",
