@@ -3907,7 +3907,7 @@ function MonthTable({
 }) {
   // columns: array of {key, label, fmt, colorFn}
   // uses global MOS_2025
-  const reversed = [...rep.mos].reverse(); // most recent first
+  const reversed = [...rep.mos].filter(m => parseInt(m.year) >= 2026).reverse(); // most recent first, 2026+ only
   return /*#__PURE__*/React.createElement("div", {
     style: {
       overflowX: "auto",
@@ -4035,10 +4035,11 @@ function DrillDown({
     const r = n / d;
     return r >= 0.7 ? "#34d399" : r >= 0.4 ? "#fbbf24" : "#f87171";
   };
-  const avgAmtAll = rep.mos.length ? rep.mos.reduce((s, m) => s + (m.fundedAmt || 0), 0) / rep.mos.length : 0;
-  const avgUnitsAll = rep.mos.length ? rep.mos.reduce((s, m) => s + (m.funded || 0), 0) / rep.mos.length : 0;
+  const mos26 = rep.mos.filter(m => parseInt(m.year) >= 2026);
+  const avgAmtAll = mos26.length ? mos26.reduce((s, m) => s + (m.fundedAmt || 0), 0) / mos26.length : 0;
+  const avgUnitsAll = mos26.length ? mos26.reduce((s, m) => s + (m.funded || 0), 0) / mos26.length : 0;
   const renderUnits = () => {
-    const data = rep.mos.map(m => ({
+    const data = mos26.map(m => ({
       month: m.month,
       units: m.funded || 0
     }));
@@ -4059,17 +4060,6 @@ function DrillDown({
         colorFn: v => v >= 0 ? "#34d399" : "#f87171"
       }]
     }), /*#__PURE__*/React.createElement(DrillSectionHeader, {
-      t: "YTD Summary"
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginBottom: 20
-      }
-    }, /*#__PURE__*/React.createElement(YtdCard, {
-      label: "2025 YTD (Oct\u2013Dec)",
-      mos: mos25,
-      c: "#a78bfa",
-      valueKey: "funded"
-    })), /*#__PURE__*/React.createElement(DrillSectionHeader, {
       t: "All Months Chart"
     }), /*#__PURE__*/React.createElement(ResponsiveContainer, {
       width: "100%",
@@ -4155,24 +4145,12 @@ function DrillDown({
         colorFn: v => v >= 0 ? "#34d399" : "#f87171"
       }]
     }), /*#__PURE__*/React.createElement(DrillSectionHeader, {
-      t: "YTD Summary"
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginBottom: 20
-      }
-    }, /*#__PURE__*/React.createElement(YtdCard, {
-      label: "2025 YTD (Oct\u2013Dec)",
-      mos: mos25,
-      c: "#a78bfa",
-      valueKey: "fundedAmt",
-      fmt: fmt$
-    })), /*#__PURE__*/React.createElement(DrillSectionHeader, {
       t: "All Months Chart"
     }), /*#__PURE__*/React.createElement(ResponsiveContainer, {
       width: "100%",
       height: 200
     }, /*#__PURE__*/React.createElement(LineChart, {
-      data: rep.mos,
+      data: mos26,
       margin: {
         left: 0,
         right: 16,
@@ -4236,7 +4214,7 @@ function DrillDown({
     }))));
   };
   const renderApps = () => {
-    const chart = rep.mos.map(m => ({
+    const chart = mos26.map(m => ({
       month: m.month,
       sent: m.sent || 0,
       received: m.received || 0,
@@ -4261,61 +4239,6 @@ function DrillDown({
         colorFn: () => "#fbbf24"
       }]
     }), /*#__PURE__*/React.createElement(DrillSectionHeader, {
-      t: "YTD Summary"
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginBottom: 20
-      }
-    }, [{
-      label: "2025 YTD (Oct–Dec)",
-      mos: mos25,
-      c: "#a78bfa"
-    }].map(({
-      label,
-      mos,
-      c
-    }) => {
-      const s = mos.reduce((a, m) => a + (m.sent || 0), 0),
-        r = mos.reduce((a, m) => a + (m.received || 0), 0),
-        ap = mos.reduce((a, m) => a + (m.approved || 0), 0);
-      return /*#__PURE__*/React.createElement("div", {
-        key: label,
-        style: {
-          background: "#0a1525",
-          border: `1px solid ${c}33`,
-          borderRadius: 6,
-          padding: 14
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          color: c,
-          fontSize: 15,
-          fontWeight: 800,
-          letterSpacing: 1.5,
-          marginBottom: 10
-        }
-      }, label), /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: 8
-        }
-      }, [["Sent", s, "#94b8cc"], ["Received", r, "#a78bfa"], ["Approved", ap, "#fbbf24"]].map(([lbl, v, col]) => /*#__PURE__*/React.createElement("div", {
-        key: lbl
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          color: "#4a7fa8",
-          fontSize: 13,
-          marginBottom: 2
-        }
-      }, lbl), /*#__PURE__*/React.createElement("div", {
-        style: {
-          color: col,
-          fontFamily: "'Bebas Neue',sans-serif",
-          fontSize: 32
-        }
-      }, v || "—")))));
-    })), /*#__PURE__*/React.createElement(DrillSectionHeader, {
       t: "All Months Chart"
     }), /*#__PURE__*/React.createElement(ResponsiveContainer, {
       width: "100%",
